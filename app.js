@@ -1,7 +1,6 @@
 const STORAGE_KEY = 'bodyweight_records';
 const GOAL_KEY = 'bodyweight_goal';
 
-let chart = null;
 let currentPeriod = '3m';
 
 function getRecords() {
@@ -53,6 +52,139 @@ function filterByPeriod(records, period) {
   return records.filter(r => r.date >= cutoffStr);
 }
 
+function niceYTicks(min, max) {
+  const range = max - min || 1;
+  let step;
+  if (range <= 1) step = 0.2;
+  else if (range <= 3) step = 0.5;
+  else if (range <= 8) step = 1;
+  else if (range <= 20) step = 2;
+  else step = 5;
+
+  const start = Math.floor(min / step) * step;
+  const ticks = [];
+  for (let v = start; v <= max + step * 0.01; v = Math.round((v + step) * 100) / 100) {
+    ticks.push(Math.round(v * 100) / 100);
+  }
+  return ticks;
+}
+
+function updateChart(records, period) {
+  const filtered = filterByPeriod(records, period);
+  const sorted = [...filtered].sort((a, b) => a.date.localeCompare(b.date));
+  const goal = getGoal();
+  const wrapper = document.getElementById('chartWrapper');
+
+  if (sorted.length === 0) {
+    wrapper.innerHTML = '<div class="chart-empty">기록을 추가하면 그래프가 표시됩니다.</div>';
+    return;
+  }
+
+  const W = 760, H = 240;
+  const PAD = { top: 24, right: goal !== null ? 42 : 20, bottom: 40, left: 52 };
+  const cW = W - PAD.left - PAD.right;
+  const cH = H - PAD.top - PAD.bottom;
+
+  const weights = sorted.map(r => r.weight);
+  if (goal !== null) weights.push(goal);
+  const dataMin = Math.min(...weights);
+  const dataMax = Math.max(...weights);
+  const pad = (dataMax - dataMin) * 0.15 || 0.5;
+  const minW = dataMin - pad;
+  const maxW = dataMax + pad;
+
+  const xOf = i => PAD.left + (sorted.length === 1 ? cW / 2 : (i / (sorted.length - 1)) * cW);
+  const yOf = w => PAD.top + (1 - (w - minW) / (maxW - minW)) * cH;
+
+  const pts = sorted.map((r, i) => ({ x: xOf(i), y: yOf(r.weight), r }));
+
+  const linePath = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const areaPath = `${linePath} L${pts[pts.length - 1].x.toFixed(1)},${(PAD.top + cH).toFixed(1)} L${pts[0].x.toFixed(1)},${(PAD.top + cH).toFixed(1)}Z`;
+
+  const yTicks = niceYTicks(minW, maxW);
+
+  const maxXLabels = Math.min(sorted.length, 8);
+  const xLabelIdxs = sorted.length === 1
+    ? [0]
+    : Array.from({ length: maxXLabels }, (_, i) => Math.round(i * (sorted.length - 1) / (maxXLabels - 1)));
+
+  const goalY = goal !== null ? yOf(goal) : null;
+
+  const svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">
+  <defs>
+    <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.02"/>
+    </linearGradient>
+    <clipPath id="chartArea">
+      <rect x="${PAD.left}" y="${PAD.top}" width="${cW}" height="${cH}"/>
+    </clipPath>
+  </defs>
+
+  ${yTicks.map(w => {
+    const y = yOf(w);
+    if (y < PAD.top - 2 || y > PAD.top + cH + 2) return '';
+    return `<line x1="${PAD.left}" y1="${y.toFixed(1)}" x2="${(PAD.left + cW).toFixed(1)}" y2="${y.toFixed(1)}" stroke="#f0f0f0" stroke-width="1"/>
+    <text x="${(PAD.left - 8).toFixed(1)}" y="${y.toFixed(1)}" text-anchor="end" dominant-baseline="middle" fill="#9ca3af" font-size="11" font-family="-apple-system,sans-serif">${w % 1 === 0 ? w : w.toFixed(1)}</text>`;
+  }).join('')}
+
+  ${goalY !== null ? `
+  <line x1="${PAD.left}" y1="${goalY.toFixed(1)}" x2="${(PAD.left + cW).toFixed(1)}" y2="${goalY.toFixed(1)}" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5 4" clip-path="url(#chartArea)"/>
+  <text x="${(PAD.left + cW + 5).toFixed(1)}" y="${goalY.toFixed(1)}" dominant-baseline="middle" fill="#ef4444" font-size="10" font-family="-apple-system,sans-serif" font-weight="500">목표</text>
+  ` : ''}
+
+  <g clip-path="url(#chartArea)">
+    <path d="${areaPath}" fill="url(#areaGrad)"/>
+    <path d="${linePath}" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+  </g>
+
+  ${pts.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4.5" fill="#3b82f6" stroke="#fff" stroke-width="2"/>`).join('')}
+
+  ${xLabelIdxs.map(i => {
+    const p = pts[i];
+    return `<text x="${p.x.toFixed(1)}" y="${(PAD.top + cH + 18).toFixed(1)}" text-anchor="middle" fill="#9ca3af" font-size="11" font-family="-apple-system,sans-serif">${formatDateShort(sorted[i].date)}</text>`;
+  }).join('')}
+
+  ${pts.map((p, i) => `<rect class="chart-hit" data-idx="${i}" x="${(p.x - 24).toFixed(1)}" y="${PAD.top}" width="48" height="${cH}" fill="transparent" style="cursor:default"/>`).join('')}
+</svg>`;
+
+  wrapper.innerHTML = svg;
+
+  wrapper.querySelectorAll('.chart-hit').forEach(el => {
+    el.addEventListener('mouseenter', e => {
+      const idx = parseInt(el.dataset.idx, 10);
+      const { r } = pts[idx];
+      showTooltip(e, r.weight, r.date, r.memo);
+    });
+    el.addEventListener('mousemove', e => {
+      const idx = parseInt(el.dataset.idx, 10);
+      const { r } = pts[idx];
+      showTooltip(e, r.weight, r.date, r.memo);
+    });
+    el.addEventListener('mouseleave', hideTooltip);
+  });
+}
+
+function showTooltip(e, weight, date, memo) {
+  const tt = document.getElementById('chartTooltip');
+  const card = document.querySelector('.chart-card');
+  const rect = card.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  tt.innerHTML = `<strong>${formatDateFull(date)}</strong><br>${weight.toFixed(1)} kg${memo ? `<br><span style="color:#9ca3af">${memo}</span>` : ''}`;
+
+  const ttW = 140;
+  const left = x + 14 + ttW > rect.width ? x - ttW - 6 : x + 14;
+  tt.style.left = `${left}px`;
+  tt.style.top = `${Math.max(4, y - 44)}px`;
+  tt.style.display = 'block';
+}
+
+function hideTooltip() {
+  document.getElementById('chartTooltip').style.display = 'none';
+}
+
 function updateStats(records) {
   const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date));
   const goal = getGoal();
@@ -61,145 +193,20 @@ function updateStats(records) {
   const start = sorted.length ? sorted[0].weight : null;
   const change = current !== null && start !== null ? current - start : null;
 
-  document.getElementById('currentWeight').textContent =
-    current !== null ? current.toFixed(1) : '—';
-  document.getElementById('startWeight').textContent =
-    start !== null ? start.toFixed(1) : '—';
-  document.getElementById('goalWeight').textContent =
-    goal !== null ? goal.toFixed(1) : '—';
+  document.getElementById('currentWeight').textContent = current !== null ? current.toFixed(1) : '—';
+  document.getElementById('startWeight').textContent = start !== null ? start.toFixed(1) : '—';
+  document.getElementById('goalWeight').textContent = goal !== null ? goal.toFixed(1) : '—';
 
   const changeEl = document.getElementById('weightChange');
   const changeCard = document.getElementById('changeCard');
 
   if (change !== null) {
-    const sign = change > 0 ? '+' : '';
-    changeEl.textContent = `${sign}${change.toFixed(1)}`;
+    changeEl.textContent = `${change > 0 ? '+' : ''}${change.toFixed(1)}`;
     changeCard.className = 'stat-card ' + (change > 0 ? 'negative' : change < 0 ? 'positive' : '');
   } else {
     changeEl.textContent = '—';
     changeCard.className = 'stat-card';
   }
-}
-
-function buildChartDatasets(sorted, goal) {
-  const labels = sorted.map(r => formatDateShort(r.date));
-  const data = sorted.map(r => r.weight);
-
-  const datasets = [
-    {
-      label: '체중',
-      data,
-      borderColor: '#3b82f6',
-      backgroundColor: 'rgba(59,130,246,0.07)',
-      pointBackgroundColor: '#3b82f6',
-      pointBorderColor: '#fff',
-      pointBorderWidth: 2,
-      pointRadius: sorted.length > 60 ? 2 : 4,
-      pointHoverRadius: 6,
-      borderWidth: 2.5,
-      tension: 0.35,
-      fill: true,
-    },
-  ];
-
-  if (goal !== null) {
-    datasets.push({
-      label: '목표',
-      data: data.map(() => goal),
-      borderColor: '#ef4444',
-      borderWidth: 1.5,
-      borderDash: [6, 4],
-      pointRadius: 0,
-      fill: false,
-    });
-  }
-
-  return { labels, datasets };
-}
-
-function updateChart(records, period) {
-  const filtered = filterByPeriod(records, period);
-  const sorted = [...filtered].sort((a, b) => a.date.localeCompare(b.date));
-  const goal = getGoal();
-
-  const chartWrapper = document.querySelector('.chart-wrapper');
-
-  if (sorted.length === 0) {
-    if (chart) {
-      chart.destroy();
-      chart = null;
-    }
-    chartWrapper.innerHTML = '<div class="chart-empty">기록을 추가하면 그래프가 표시됩니다.</div>';
-    return;
-  }
-
-  if (!document.getElementById('weightChart')) {
-    chartWrapper.innerHTML = '<canvas id="weightChart"></canvas>';
-  }
-
-  const { labels, datasets } = buildChartDatasets(sorted, goal);
-  const ctx = document.getElementById('weightChart').getContext('2d');
-
-  if (chart) {
-    chart.data.labels = labels;
-    chart.data.datasets = datasets;
-    chart.options.plugins.legend.display = goal !== null;
-    chart.update('active');
-    return;
-  }
-
-  chart = new Chart(ctx, {
-    type: 'line',
-    data: { labels, datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { intersect: false, mode: 'index' },
-      plugins: {
-        legend: {
-          display: goal !== null,
-          position: 'top',
-          align: 'end',
-          labels: {
-            boxWidth: 16,
-            font: { size: 12 },
-            color: '#6b7280',
-            usePointStyle: true,
-          },
-        },
-        tooltip: {
-          backgroundColor: 'white',
-          titleColor: '#111827',
-          bodyColor: '#6b7280',
-          borderColor: '#e5e7eb',
-          borderWidth: 1,
-          padding: 10,
-          callbacks: {
-            label: ctx => {
-              if (ctx.dataset.label === '목표') return `목표: ${ctx.parsed.y.toFixed(1)} kg`;
-              return `체중: ${ctx.parsed.y.toFixed(1)} kg`;
-            },
-          },
-        },
-      },
-      scales: {
-        x: {
-          grid: { display: false },
-          ticks: { color: '#9ca3af', font: { size: 11 }, maxTicksLimit: 10 },
-          border: { display: false },
-        },
-        y: {
-          grid: { color: '#f3f4f6' },
-          ticks: {
-            color: '#9ca3af',
-            font: { size: 11 },
-            callback: v => `${v}`,
-          },
-          border: { display: false },
-        },
-      },
-    },
-  });
 }
 
 function renderRecords(records) {
@@ -211,9 +218,7 @@ function renderRecords(records) {
     return;
   }
 
-  el.innerHTML = sorted
-    .map(
-      r => `
+  el.innerHTML = sorted.map(r => `
     <div class="record-item">
       <div class="record-left">
         <span class="record-date">${formatDateFull(r.date)}</span>
@@ -225,9 +230,7 @@ function renderRecords(records) {
       </div>
       <button class="record-delete" data-id="${r.id}" title="삭제">×</button>
     </div>
-  `
-    )
-    .join('');
+  `).join('');
 }
 
 function render() {
@@ -246,7 +249,6 @@ document.getElementById('recordForm').addEventListener('submit', e => {
   if (!date || isNaN(weight) || weight <= 0) return;
 
   const records = getRecords();
-
   const existing = records.findIndex(r => r.date === date);
   if (existing !== -1) {
     records[existing].weight = weight;
@@ -265,8 +267,7 @@ document.getElementById('recordsList').addEventListener('click', e => {
   const btn = e.target.closest('.record-delete');
   if (!btn) return;
   const id = parseInt(btn.dataset.id, 10);
-  const updated = getRecords().filter(r => r.id !== id);
-  saveRecords(updated);
+  saveRecords(getRecords().filter(r => r.id !== id));
   render();
 });
 
@@ -291,8 +292,7 @@ document.getElementById('cancelGoal').addEventListener('click', () => {
 
 document.getElementById('saveGoal').addEventListener('click', () => {
   const raw = document.getElementById('goalInput').value;
-  const val = raw !== '' ? parseFloat(raw) : null;
-  saveGoal(val);
+  saveGoal(raw !== '' ? parseFloat(raw) : null);
   document.getElementById('goalModal').classList.remove('open');
   render();
 });

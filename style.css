@@ -118,6 +118,23 @@ header h1 {
 /* Chart */
 .chart-card {
   padding-top: 16px;
+  position: relative;
+}
+
+.chart-tooltip {
+  display: none;
+  position: absolute;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--text);
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  white-space: nowrap;
+  z-index: 10;
+  line-height: 1.6;
 }
 
 .period-filter {

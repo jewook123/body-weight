@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>체중 기록</title>
   <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -44,9 +43,10 @@
         <button class="period-btn active" data-period="3m">3개월</button>
         <button class="period-btn" data-period="all">전체</button>
       </div>
-      <div class="chart-wrapper">
-        <canvas id="weightChart"></canvas>
+      <div class="chart-wrapper" id="chartWrapper">
+        <div class="chart-empty">기록을 추가하면 그래프가 표시됩니다.</div>
       </div>
+      <div class="chart-tooltip" id="chartTooltip"></div>
     </div>
 
     <div class="card">
