@@ -180,42 +180,56 @@ header h1 {
   font-size: 14px;
 }
 
-/* Toggle checkboxes */
+/* Toggle buttons */
 .toggle-row {
   display: flex;
   gap: 10px;
   margin-bottom: 12px;
 }
 
-.toggle-label {
-  cursor: pointer;
-}
-
-.toggle-label input[type="checkbox"] {
-  display: none;
-}
-
 .toggle-btn {
-  display: inline-block;
-  padding: 8px 16px;
-  border: 1.5px solid var(--border);
-  border-radius: 8px;
-  font-size: 14px;
-  color: var(--text-secondary);
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 11px 16px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
   background: var(--bg);
-  user-select: none;
+  color: var(--text-secondary);
+  font-size: 15px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
   transition: all 0.15s;
+  user-select: none;
 }
 
-.toggle-label input:checked + .exercise-btn {
-  background: #dcfce7;
+.toggle-btn:hover {
+  border-color: #d1d5db;
+  background: white;
+}
+
+.toggle-btn .check-icon {
+  font-size: 13px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.toggle-btn.active .check-icon {
+  opacity: 1;
+}
+
+.toggle-btn.active.exercise-btn {
+  background: #f0fdf4;
   border-color: #16a34a;
   color: #15803d;
   font-weight: 600;
 }
 
-.toggle-label input:checked + .drink-btn {
-  background: #fef3c7;
+.toggle-btn.active.drink-btn {
+  background: #fffbeb;
   border-color: #d97706;
   color: #b45309;
   font-weight: 600;
@@ -224,25 +238,31 @@ header h1 {
 /* Record badges */
 .record-badges {
   display: flex;
-  gap: 5px;
+  gap: 6px;
   flex-shrink: 0;
+  margin-right: 4px;
 }
 
 .badge {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
-  padding: 2px 7px;
+  padding: 3px 10px;
   border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .badge-exercise {
   background: #dcfce7;
   color: #15803d;
+  border: 1px solid #bbf7d0;
 }
 
 .badge-drink {
   background: #fef3c7;
   color: #b45309;
+  border: 1px solid #fde68a;
 }
 
 /* Form */

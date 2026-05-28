@@ -233,8 +233,8 @@ function renderRecords(records) {
         </span>
       </div>
       <div class="record-badges">
-        ${r.exercise ? '<span class="badge badge-exercise">🏃 운동</span>' : ''}
-        ${r.drink ? '<span class="badge badge-drink">🍺 음주</span>' : ''}
+        ${r.exercise ? '<span class="badge badge-exercise">🏃&nbsp;운동</span>' : ''}
+        ${r.drink ? '<span class="badge badge-drink">🍺&nbsp;음주</span>' : ''}
       </div>
       <button class="record-delete" data-id="${r.id}" title="삭제">×</button>
     </div>
@@ -256,8 +256,8 @@ document.getElementById('recordForm').addEventListener('submit', e => {
 
   if (!date || isNaN(weight) || weight <= 0) return;
 
-  const exercise = document.getElementById('exercise').checked;
-  const drink = document.getElementById('drink').checked;
+  const exercise = document.getElementById('exerciseBtn').classList.contains('active');
+  const drink = document.getElementById('drinkBtn').classList.contains('active');
 
   const records = getRecords();
   const existing = records.findIndex(r => r.date === date);
@@ -273,8 +273,8 @@ document.getElementById('recordForm').addEventListener('submit', e => {
   saveRecords(records);
   document.getElementById('weight').value = '';
   document.getElementById('memo').value = '';
-  document.getElementById('exercise').checked = false;
-  document.getElementById('drink').checked = false;
+  document.getElementById('exerciseBtn').classList.remove('active');
+  document.getElementById('drinkBtn').classList.remove('active');
   render();
 });
 
@@ -316,6 +316,12 @@ document.getElementById('goalModal').addEventListener('click', e => {
   if (e.target === document.getElementById('goalModal')) {
     document.getElementById('goalModal').classList.remove('open');
   }
+});
+
+['exerciseBtn', 'drinkBtn'].forEach(id => {
+  document.getElementById(id).addEventListener('click', () => {
+    document.getElementById(id).classList.toggle('active');
+  });
 });
 
 document.getElementById('date').value = today();
