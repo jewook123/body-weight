@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,8 +10,14 @@
   <div class="container">
     <header>
       <h1>체중 기록</h1>
-      <button class="goal-btn" id="goalBtn">목표 설정</button>
+      <div class="header-actions">
+        <button class="icon-btn" id="themeBtn" title="다크모드 전환">🌙</button>
+        <button class="action-btn" id="importBtn">가져오기</button>
+        <button class="action-btn" id="exportBtn">내보내기</button>
+        <button class="action-btn" id="goalBtn">목표 설정</button>
+      </div>
     </header>
+    <input type="file" id="importFile" accept=".json" style="display:none">
 
     <div class="stats">
       <div class="stat-card">
@@ -99,6 +105,8 @@
       </div>
     </div>
   </div>
+
+  <div class="toast" id="toast"></div>
 
   <script src="app.js"></script>
 </body>
