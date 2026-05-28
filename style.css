@@ -585,18 +585,40 @@ input:focus {
   }
 
   /* Records list — mobile */
+  .record-item {
+    padding: 8px 10px;
+  }
+
+  .record-left {
+    gap: 8px;
+  }
+
   .record-date {
-    font-size: 12px;
-    min-width: 64px;
+    font-size: 11px;
+    min-width: 56px;
   }
 
   .record-weight {
-    font-size: 15px;
+    font-size: 13px;
   }
 
-  .record-unit,
+  .record-unit {
+    font-size: 11px;
+  }
+
   .record-memo {
-    font-size: 12px;
+    font-size: 11px;
+    max-width: 80px;
+  }
+
+  .record-delete {
+    font-size: 16px;
+    padding: 2px 4px;
+  }
+
+  .record-badges {
+    gap: 4px;
+    margin-right: 2px;
   }
 
   .badge-text {
@@ -604,7 +626,7 @@ input:focus {
   }
 
   .badge {
-    padding: 3px 6px;
-    font-size: 14px;
+    padding: 2px 5px;
+    font-size: 13px;
   }
 }
