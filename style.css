@@ -583,4 +583,28 @@ input:focus {
     padding: 7px 10px;
     font-size: 12px;
   }
+
+  /* Records list — mobile */
+  .record-date {
+    font-size: 12px;
+    min-width: 64px;
+  }
+
+  .record-weight {
+    font-size: 15px;
+  }
+
+  .record-unit,
+  .record-memo {
+    font-size: 12px;
+  }
+
+  .badge-text {
+    display: none;
+  }
+
+  .badge {
+    padding: 3px 6px;
+    font-size: 14px;
+  }
 }
