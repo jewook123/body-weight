@@ -154,25 +154,29 @@ function updateChart(records, period) {
     el.addEventListener('mouseenter', e => {
       const idx = parseInt(el.dataset.idx, 10);
       const { r } = pts[idx];
-      showTooltip(e, r.weight, r.date, r.memo);
+      showTooltip(e, r.weight, r.date, r.memo, r.exercise, r.drink);
     });
     el.addEventListener('mousemove', e => {
       const idx = parseInt(el.dataset.idx, 10);
       const { r } = pts[idx];
-      showTooltip(e, r.weight, r.date, r.memo);
+      showTooltip(e, r.weight, r.date, r.memo, r.exercise, r.drink);
     });
     el.addEventListener('mouseleave', hideTooltip);
   });
 }
 
-function showTooltip(e, weight, date, memo) {
+function showTooltip(e, weight, date, memo, exercise, drink) {
   const tt = document.getElementById('chartTooltip');
   const card = document.querySelector('.chart-card');
   const rect = card.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
 
-  tt.innerHTML = `<strong>${formatDateFull(date)}</strong><br>${weight.toFixed(1)} kg${memo ? `<br><span style="color:#9ca3af">${memo}</span>` : ''}`;
+  const badges = [
+    exercise ? '<span style="color:#15803d">🏃 운동</span>' : '',
+    drink ? '<span style="color:#b45309">🍺 음주</span>' : '',
+  ].filter(Boolean).join('  ');
+  tt.innerHTML = `<strong>${formatDateFull(date)}</strong><br>${weight.toFixed(1)} kg${memo ? `<br><span style="color:#9ca3af">${memo}</span>` : ''}${badges ? `<br>${badges}` : ''}`;
 
   const ttW = 140;
   const left = x + 14 + ttW > rect.width ? x - ttW - 6 : x + 14;
@@ -228,6 +232,10 @@ function renderRecords(records) {
           ${r.memo ? `<span class="record-memo">· ${r.memo}</span>` : ''}
         </span>
       </div>
+      <div class="record-badges">
+        ${r.exercise ? '<span class="badge badge-exercise">🏃 운동</span>' : ''}
+        ${r.drink ? '<span class="badge badge-drink">🍺 음주</span>' : ''}
+      </div>
       <button class="record-delete" data-id="${r.id}" title="삭제">×</button>
     </div>
   `).join('');
@@ -248,18 +256,25 @@ document.getElementById('recordForm').addEventListener('submit', e => {
 
   if (!date || isNaN(weight) || weight <= 0) return;
 
+  const exercise = document.getElementById('exercise').checked;
+  const drink = document.getElementById('drink').checked;
+
   const records = getRecords();
   const existing = records.findIndex(r => r.date === date);
   if (existing !== -1) {
     records[existing].weight = weight;
     records[existing].memo = memo;
+    records[existing].exercise = exercise;
+    records[existing].drink = drink;
   } else {
-    records.push({ id: Date.now(), date, weight, memo });
+    records.push({ id: Date.now(), date, weight, memo, exercise, drink });
   }
 
   saveRecords(records);
   document.getElementById('weight').value = '';
   document.getElementById('memo').value = '';
+  document.getElementById('exercise').checked = false;
+  document.getElementById('drink').checked = false;
   render();
 });
 
