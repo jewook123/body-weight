@@ -238,8 +238,8 @@ function renderRecords(records) {
         </span>
       </div>
       <div class="record-badges">
-        ${r.exercise ? '<span class="badge badge-exercise">🏃&nbsp;운동</span>' : ''}
-        ${r.drink    ? '<span class="badge badge-drink">🍺&nbsp;음주</span>'    : ''}
+        <span class="badge ${r.exercise ? 'badge-exercise' : 'badge-off'}">🏃&nbsp;운동</span>
+        <span class="badge ${r.drink    ? 'badge-drink'    : 'badge-off'}">🍺&nbsp;음주</span>
       </div>
       <button class="record-delete" data-id="${r.id}" title="삭제">×</button>
     </div>

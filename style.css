@@ -282,6 +282,15 @@ header h1 {
   gap: 6px;
   flex-shrink: 0;
   margin-right: 4px;
+  align-items: center;
+}
+
+.badge-off {
+  background: transparent;
+  color: var(--border);
+  border: 1px dashed var(--border);
+  font-weight: 500;
+  opacity: 0.5;
 }
 
 .badge {
