@@ -85,11 +85,26 @@
     </div>
 
     <div class="card">
-      <h2>기록 목록</h2>
+      <div class="card-header">
+        <h2>기록 목록</h2>
+        <button class="expand-btn" id="expandRecordsBtn" title="전체화면">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+          </svg>
+        </button>
+      </div>
       <div id="recordsList" class="records-list">
         <p class="empty-msg">아직 기록이 없어요.</p>
       </div>
     </div>
+  </div>
+
+  <div class="records-fullscreen" id="recordsFullscreen">
+    <div class="records-fullscreen-header">
+      <h2>기록 목록 <span class="records-count" id="recordsCount"></span></h2>
+      <button class="close-fs-btn" id="closeFullscreen">✕</button>
+    </div>
+    <div id="recordsFullList" class="records-list-full"></div>
   </div>
 
   <div class="modal-overlay" id="goalModal">

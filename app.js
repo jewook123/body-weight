@@ -220,14 +220,10 @@ function updateStats(records) {
 }
 
 // Records list
-function renderRecords(records) {
+function recordsHTML(records) {
   const sorted = [...records].sort((a, b) => b.date.localeCompare(a.date));
-  const el = document.getElementById('recordsList');
-  if (!sorted.length) {
-    el.innerHTML = '<p class="empty-msg">아직 기록이 없어요.</p>';
-    return;
-  }
-  el.innerHTML = sorted.map(r => `
+  if (!sorted.length) return '<p class="empty-msg">아직 기록이 없어요.</p>';
+  return sorted.map(r => `
     <div class="record-item">
       <div class="record-left">
         <span class="record-date">${formatDateFull(r.date)}</span>
@@ -244,6 +240,15 @@ function renderRecords(records) {
       <button class="record-delete" data-id="${r.id}" title="삭제">×</button>
     </div>
   `).join('');
+}
+
+function renderRecords(records) {
+  document.getElementById('recordsList').innerHTML = recordsHTML(records);
+  const fs = document.getElementById('recordsFullscreen');
+  if (fs.classList.contains('open')) {
+    document.getElementById('recordsFullList').innerHTML = recordsHTML(records);
+    document.getElementById('recordsCount').textContent = `${records.length}개`;
+  }
 }
 
 function render() {
@@ -344,6 +349,26 @@ document.getElementById('saveGoal').addEventListener('click', () => {
 document.getElementById('goalModal').addEventListener('click', e => {
   if (e.target === document.getElementById('goalModal'))
     document.getElementById('goalModal').classList.remove('open');
+});
+
+document.getElementById('expandRecordsBtn').addEventListener('click', () => {
+  const records = getRecords();
+  document.getElementById('recordsFullList').innerHTML = recordsHTML(records);
+  document.getElementById('recordsCount').textContent = `${records.length}개`;
+  document.getElementById('recordsFullscreen').classList.add('open');
+  document.body.style.overflow = 'hidden';
+});
+
+document.getElementById('closeFullscreen').addEventListener('click', () => {
+  document.getElementById('recordsFullscreen').classList.remove('open');
+  document.body.style.overflow = '';
+});
+
+document.getElementById('recordsFullList').addEventListener('click', e => {
+  const btn = e.target.closest('.record-delete');
+  if (!btn) return;
+  saveRecords(getRecords().filter(r => r.id !== parseInt(btn.dataset.id, 10)));
+  render();
 });
 
 ['exerciseBtn', 'drinkBtn'].forEach(id => {
