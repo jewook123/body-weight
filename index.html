@@ -123,6 +123,29 @@
     </div>
   </div>
 
+  <div class="mission-settings" id="missionSettings">
+    <div class="ms-panel">
+      <div class="ms-header">
+        <h2>⚙️ 미션 관리</h2>
+        <button class="close-fs-btn" id="closeMissionSettings">✕</button>
+      </div>
+      <div class="ms-body">
+        <h3 class="ms-section-title">기본 미션</h3>
+        <div id="msDefaultList"></div>
+
+        <h3 class="ms-section-title">나만의 미션 추가</h3>
+        <form id="msAddForm" class="ms-add-form">
+          <input type="text" id="msNewIcon" placeholder="😊" maxlength="2" class="ms-icon-input">
+          <input type="text" id="msNewLabel" placeholder="미션 이름 입력..." class="ms-label-input" required>
+          <button type="submit" class="submit-btn ms-submit">추가</button>
+        </form>
+
+        <h3 class="ms-section-title">나만의 미션 <span class="records-count" id="msCustomCount"></span></h3>
+        <div id="msCustomList"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script src="app.js"></script>

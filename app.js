@@ -2,6 +2,7 @@ const STORAGE_KEY = 'bodyweight_records';
 const GOAL_KEY = 'bodyweight_goal';
 const THEME_KEY = 'bodyweight_theme';
 const CHECKS_KEY = 'bodyweight_daily_checks';
+const MISSION_CFG_KEY = 'bodyweight_mission_cfg';
 
 let currentPeriod = '3m';
 
@@ -44,14 +45,94 @@ function toggleDailyCheck(dateStr, missionId) {
   updateMissions();
 }
 
+// Mission config: which defaults are disabled, custom missions added by user
+function getMissionCfg() {
+  return JSON.parse(localStorage.getItem(MISSION_CFG_KEY) || '{"disabled":[],"custom":[]}');
+}
+function saveMissionCfg(cfg) {
+  localStorage.setItem(MISSION_CFG_KEY, JSON.stringify(cfg));
+}
+
 // Pick 2 bonus missions deterministically from today's date
 function getDailyBonusMissions() {
+  const cfg = getMissionCfg();
+  const disabled = new Set(cfg.disabled || []);
+  const custom = cfg.custom || [];
+  const pool = [
+    ...BONUS_MISSION_POOL.filter(m => !disabled.has(m.id)),
+    ...custom,
+  ];
+  if (pool.length === 0) return [];
+  if (pool.length === 1) return [pool[0]];
   const seed = parseInt(today().replace(/-/g, ''), 10);
-  const len = BONUS_MISSION_POOL.length;
-  const i1 = seed % len;
-  let i2 = (seed * 31 + 17) % len;
-  if (i2 === i1) i2 = (i1 + 1) % len;
-  return [BONUS_MISSION_POOL[i1], BONUS_MISSION_POOL[i2]];
+  const i1 = seed % pool.length;
+  let i2 = (seed * 31 + 17) % pool.length;
+  if (i2 === i1) i2 = (i1 + 1) % pool.length;
+  return [pool[i1], pool[i2]];
+}
+
+// Mission settings overlay
+function openMissionSettings() {
+  renderMissionSettings();
+  document.getElementById('missionSettings').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeMissionSettings() {
+  document.getElementById('missionSettings').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function renderMissionSettings() {
+  const cfg = getMissionCfg();
+  const disabled = new Set(cfg.disabled || []);
+  const custom = cfg.custom || [];
+
+  const defaultRows = BONUS_MISSION_POOL.map(m => {
+    const on = !disabled.has(m.id);
+    return `<div class="ms-row">
+      <span class="ms-icon">${m.icon}</span>
+      <span class="ms-label">${m.label}</span>
+      <span class="ms-type">${m.type === 'auto' ? '자동' : '수동'}</span>
+      <button class="ms-toggle ${on ? 'ms-toggle--on' : 'ms-toggle--off'}" data-id="${m.id}">${on ? 'ON' : 'OFF'}</button>
+    </div>`;
+  }).join('');
+
+  const customRows = custom.length
+    ? custom.map(m => `<div class="ms-row">
+        <span class="ms-icon">${m.icon}</span>
+        <span class="ms-label">${m.label}</span>
+        <span class="ms-type">수동</span>
+        <button class="ms-delete" data-id="${m.id}">삭제</button>
+      </div>`).join('')
+    : '<p class="ms-empty">추가된 미션이 없어요</p>';
+
+  document.getElementById('msDefaultList').innerHTML = defaultRows;
+  document.getElementById('msCustomList').innerHTML = customRows;
+
+  // Toggle handlers
+  document.querySelectorAll('.ms-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cfg = getMissionCfg();
+      const s = new Set(cfg.disabled || []);
+      if (s.has(btn.dataset.id)) s.delete(btn.dataset.id);
+      else s.add(btn.dataset.id);
+      cfg.disabled = [...s];
+      saveMissionCfg(cfg);
+      renderMissionSettings();
+      updateMissions();
+    });
+  });
+
+  // Delete custom handler
+  document.querySelectorAll('.ms-delete').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cfg = getMissionCfg();
+      cfg.custom = (cfg.custom || []).filter(m => m.id !== btn.dataset.id);
+      saveMissionCfg(cfg);
+      renderMissionSettings();
+      updateMissions();
+    });
+  });
 }
 
 // Storage
@@ -558,6 +639,41 @@ document.getElementById('importBtn').addEventListener('click', () => {
 });
 document.getElementById('importFile').addEventListener('change', e => {
   if (e.target.files[0]) importRecords(e.target.files[0]);
+});
+
+// Mission settings — long-press on card header to open
+(function () {
+  const header = document.querySelector('#dailyMissions');
+  let timer;
+  const start = () => { timer = setTimeout(openMissionSettings, 600); };
+  const cancel = () => clearTimeout(timer);
+  header.addEventListener('touchstart', e => { if (e.target.closest('h2')) start(); }, { passive: true });
+  header.addEventListener('touchend', cancel);
+  header.addEventListener('touchmove', cancel);
+  header.addEventListener('mousedown', e => { if (e.target.closest('h2')) start(); });
+  header.addEventListener('mouseup', cancel);
+  header.addEventListener('mouseleave', cancel);
+})();
+
+document.getElementById('closeMissionSettings').addEventListener('click', closeMissionSettings);
+document.getElementById('missionSettings').addEventListener('click', e => {
+  if (e.target === document.getElementById('missionSettings')) closeMissionSettings();
+});
+
+document.getElementById('msAddForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const icon  = document.getElementById('msNewIcon').value.trim() || '⭐';
+  const label = document.getElementById('msNewLabel').value.trim();
+  if (!label) return;
+  const cfg = getMissionCfg();
+  cfg.custom = cfg.custom || [];
+  cfg.custom.push({ id: `custom_${Date.now()}`, icon, label, type: 'manual' });
+  saveMissionCfg(cfg);
+  document.getElementById('msNewIcon').value  = '';
+  document.getElementById('msNewLabel').value = '';
+  renderMissionSettings();
+  updateMissions();
+  showToast('미션이 추가됐어요!');
 });
 
 // Init
