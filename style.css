@@ -759,19 +759,11 @@ input:focus {
   padding: 14px;
 }
 
-.ms-add-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
 .ms-icon-input {
-  width: 64px;
+  width: 100%;
   text-align: center;
   font-size: 15px;
-  flex-shrink: 0;
-  align-self: stretch;
-  padding: 10px 4px;
+  padding: 11px 13px;
   border: 1.5px solid var(--border);
   border-radius: 8px;
   background: var(--card);
