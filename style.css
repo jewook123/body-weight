@@ -751,45 +751,54 @@ input:focus {
 
 .ms-add-form {
   display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.ms-add-row {
+  display: flex;
   gap: 8px;
   align-items: center;
 }
 
 .ms-icon-input {
-  width: 52px;
+  width: 56px;
   text-align: center;
-  font-size: 18px;
+  font-size: 22px;
   flex-shrink: 0;
-  padding: 10px 6px;
+  padding: 10px 4px;
   border: 1.5px solid var(--border);
   border-radius: 8px;
-  background: var(--bg);
+  background: var(--card);
   color: var(--text);
   font-family: inherit;
 }
 
-.ms-icon-input:focus { outline: none; border-color: var(--primary); background: var(--card); }
+.ms-icon-input:focus { outline: none; border-color: var(--primary); }
 
 .ms-label-input {
   flex: 1;
-  padding: 10px 12px;
+  padding: 11px 13px;
   border: 1.5px solid var(--border);
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--text);
-  background: var(--bg);
+  background: var(--card);
   font-family: inherit;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.15s;
 }
 
-.ms-label-input:focus { outline: none; border-color: var(--primary); background: var(--card); }
+.ms-label-input:focus { outline: none; border-color: var(--primary); }
 
 .ms-submit {
-  width: auto;
+  width: 100%;
   margin-top: 0;
-  padding: 10px 18px;
-  font-size: 14px;
-  flex-shrink: 0;
+  padding: 12px;
+  font-size: 15px;
 }
 
 .ms-empty {

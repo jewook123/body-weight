@@ -135,9 +135,11 @@
 
         <h3 class="ms-section-title">나만의 미션 추가</h3>
         <form id="msAddForm" class="ms-add-form">
-          <input type="text" id="msNewIcon" placeholder="😊" maxlength="2" class="ms-icon-input">
-          <input type="text" id="msNewLabel" placeholder="미션 이름 입력..." class="ms-label-input" required>
-          <button type="submit" class="submit-btn ms-submit">추가</button>
+          <div class="ms-add-row">
+            <input type="text" id="msNewIcon" placeholder="😊" maxlength="2" class="ms-icon-input">
+            <input type="text" id="msNewLabel" placeholder="미션 이름을 입력하세요" class="ms-label-input" required>
+          </div>
+          <button type="submit" class="submit-btn ms-submit">+ 미션 추가</button>
         </form>
 
         <h3 class="ms-section-title">나만의 미션 <span class="records-count" id="msCustomCount"></span></h3>
