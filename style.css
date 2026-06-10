@@ -737,6 +737,10 @@ input:focus {
   border: 2px solid var(--border);
 }
 
+.mission-circle--manual {
+  border: 2px dashed var(--primary);
+}
+
 .mission-circle--done {
   background: #16a34a;
   color: white;
@@ -764,6 +768,23 @@ input:focus {
 
 .mission-locked .mission-label {
   color: var(--text-secondary);
+}
+
+.mission-row--manual {
+  cursor: pointer;
+}
+
+.mission-row--manual:hover {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 5%, transparent);
+}
+
+.mission-tap-hint {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--primary);
+  opacity: 0.7;
+  white-space: nowrap;
 }
 
 .mission-progress-wrap {

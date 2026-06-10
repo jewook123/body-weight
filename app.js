@@ -1,8 +1,58 @@
 const STORAGE_KEY = 'bodyweight_records';
 const GOAL_KEY = 'bodyweight_goal';
 const THEME_KEY = 'bodyweight_theme';
+const CHECKS_KEY = 'bodyweight_daily_checks';
 
 let currentPeriod = '3m';
+
+// Bonus mission pool (12 missions, 2 picked per day by date seed)
+const BONUS_MISSION_POOL = [
+  { id:'streak3',     icon:'📅', label:'3일 연속 기록',   type:'auto' },
+  { id:'streak7',     icon:'🔥', label:'7일 연속 기록',   type:'auto' },
+  { id:'weekly3ex',   icon:'🏋️', label:'이번 주 운동 3회', type:'auto' },
+  { id:'weekly3sober',icon:'🚭', label:'이번 주 금주 3일', type:'auto' },
+  { id:'lowestweek',  icon:'📊', label:'이번 주 최저 체중', type:'auto' },
+  { id:'water',       icon:'💧', label:'물 2L 마시기',    type:'manual' },
+  { id:'veggies',     icon:'🥗', label:'채소 챙겨 먹기',   type:'manual' },
+  { id:'walk',        icon:'🚶', label:'30분 이상 걷기',   type:'manual' },
+  { id:'sleep',       icon:'😴', label:'11시 전에 수면',   type:'manual' },
+  { id:'nosnack',     icon:'🍱', label:'야식 참기',        type:'manual' },
+  { id:'stretch',     icon:'🧘', label:'스트레칭 5분',     type:'manual' },
+  { id:'measure',     icon:'📏', label:'몸 상태 체크',     type:'manual' },
+];
+
+// Daily manual checks storage
+function getDailyChecks(dateStr) {
+  const all = JSON.parse(localStorage.getItem(CHECKS_KEY) || '{}');
+  return new Set(all[dateStr] || []);
+}
+
+function toggleDailyCheck(dateStr, missionId) {
+  const all = JSON.parse(localStorage.getItem(CHECKS_KEY) || '{}');
+  const set = new Set(all[dateStr] || []);
+  if (set.has(missionId)) set.delete(missionId);
+  else set.add(missionId);
+  all[dateStr] = [...set];
+  // Clean up entries older than 7 days
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 7);
+  const cutoffStr = cutoff.toISOString().split('T')[0];
+  for (const key of Object.keys(all)) {
+    if (key < cutoffStr) delete all[key];
+  }
+  localStorage.setItem(CHECKS_KEY, JSON.stringify(all));
+  updateMissions();
+}
+
+// Pick 2 bonus missions deterministically from today's date
+function getDailyBonusMissions() {
+  const seed = parseInt(today().replace(/-/g, ''), 10);
+  const len = BONUS_MISSION_POOL.length;
+  const i1 = seed % len;
+  let i2 = (seed * 31 + 17) % len;
+  if (i2 === i1) i2 = (i1 + 1) % len;
+  return [BONUS_MISSION_POOL[i1], BONUS_MISSION_POOL[i2]];
+}
 
 // Storage
 function getRecords() {
@@ -265,13 +315,50 @@ function getMissionStates() {
   const goal = getGoal();
   const has = !!todayRecord;
 
-  return [
+  // Week start (Monday)
+  const now = new Date();
+  const dow = (now.getDay() + 6) % 7; // 0=Mon
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - dow);
+  const weekStartStr = weekStart.toISOString().split('T')[0];
+  const thisWeek = records.filter(r => r.date >= weekStartStr);
+
+  // Streak helpers
+  function hasStreak(n) {
+    for (let i = 0; i < n; i++) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      if (!records.find(r => r.date === ds)) return false;
+    }
+    return true;
+  }
+
+  const fixed = [
     { id:'record',   icon:'📝', label:'오늘 체중 기록',   done: has,                                                    locked: false, visible: true },
     { id:'exercise', icon:'🏃', label:'오늘 운동 완료',   done: has && todayRecord.exercise === true,                   locked: !has,  visible: true },
     { id:'nodrink',  icon:'🚫', label:'오늘 금주 성공',   done: has && todayRecord.drink === false,                     locked: !has,  visible: true },
     { id:'lighter',  icon:'📉', label:'어제보다 가벼움',   done: has && !!yRecord && todayRecord.weight < yRecord.weight, locked: !has,  visible: !!yRecord },
     { id:'goal',     icon:'🎯', label:'목표 달성!',       done: has && goal !== null && todayRecord.weight <= goal,     locked: !has,  visible: goal !== null },
   ].filter(m => m.visible);
+
+  const checks = getDailyChecks(todayStr);
+
+  const autoDone = {
+    streak3:      hasStreak(3),
+    streak7:      hasStreak(7),
+    weekly3ex:    thisWeek.filter(r => r.exercise).length >= 3,
+    weekly3sober: thisWeek.filter(r => !r.drink).length >= 3,
+    lowestweek:   has && thisWeek.length > 0 && todayRecord.weight <= Math.min(...thisWeek.map(r => r.weight)),
+  };
+
+  const bonus = getDailyBonusMissions().map(m => ({
+    ...m,
+    done:   m.type === 'auto' ? (autoDone[m.id] ?? false) : checks.has(m.id),
+    locked: false,
+    visible: true,
+  }));
+
+  return [...fixed, ...bonus];
 }
 
 function updateMissions() {
@@ -284,6 +371,7 @@ function updateMissions() {
   const allDone = completedCount === total;
   const hasRecord = missions.find(m => m.id === 'record')?.done ?? false;
 
+  const todayStr = today();
   const rowsHTML = missions.map(m => {
     let stateClass, circleHTML;
     if (m.locked) {
@@ -292,12 +380,18 @@ function updateMissions() {
     } else if (m.done) {
       stateClass = 'mission-done';
       circleHTML = '<span class="mission-circle mission-circle--done">✓</span>';
+    } else if (m.type === 'manual') {
+      stateClass = 'mission-incomplete';
+      circleHTML = '<span class="mission-circle mission-circle--manual"></span>';
     } else {
       stateClass = 'mission-incomplete';
       circleHTML = '<span class="mission-circle mission-circle--empty"></span>';
     }
-    return `<div class="mission-row ${stateClass}">${circleHTML}<span class="mission-label">${m.icon} ${m.label}</span></div>`;
+    const manualAttrs = m.type === 'manual' ? `data-mission-id="${m.id}" class="mission-row ${stateClass} mission-row--manual"` : `class="mission-row ${stateClass}"`;
+    return `<div ${manualAttrs}>${circleHTML}<span class="mission-label">${m.icon} ${m.label}</span>${m.type === 'manual' && !m.done ? '<span class="mission-tap-hint">탭하여 완료</span>' : ''}</div>`;
   }).join('');
+
+  // Attach click handlers after innerHTML is set (done below)
 
   const pct = total > 0 ? Math.round((completedCount / total) * 100) : 0;
 
@@ -318,6 +412,10 @@ function updateMissions() {
     ${subtitleHTML}
     <div class="mission-list">${rowsHTML}</div>
     ${bottomHTML}`;
+
+  el.querySelectorAll('[data-mission-id]').forEach(row => {
+    row.addEventListener('click', () => toggleDailyCheck(todayStr, row.dataset.missionId));
+  });
 }
 
 function render() {
