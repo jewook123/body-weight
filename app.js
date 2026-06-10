@@ -251,11 +251,81 @@ function renderRecords(records) {
   }
 }
 
+// Daily missions
+function getMissionStates() {
+  const records = getRecords();
+  const todayStr = today();
+  const todayRecord = records.find(r => r.date === todayStr);
+
+  const yDate = new Date();
+  yDate.setDate(yDate.getDate() - 1);
+  const yStr = `${yDate.getFullYear()}-${String(yDate.getMonth()+1).padStart(2,'0')}-${String(yDate.getDate()).padStart(2,'0')}`;
+  const yRecord = records.find(r => r.date === yStr);
+
+  const goal = getGoal();
+  const has = !!todayRecord;
+
+  return [
+    { id:'record',   icon:'📝', label:'오늘 체중 기록',   done: has,                                                    locked: false, visible: true },
+    { id:'exercise', icon:'🏃', label:'오늘 운동 완료',   done: has && todayRecord.exercise === true,                   locked: !has,  visible: true },
+    { id:'nodrink',  icon:'🚫', label:'오늘 금주 성공',   done: has && todayRecord.drink === false,                     locked: !has,  visible: true },
+    { id:'lighter',  icon:'📉', label:'어제보다 가벼움',   done: has && !!yRecord && todayRecord.weight < yRecord.weight, locked: !has,  visible: !!yRecord },
+    { id:'goal',     icon:'🎯', label:'목표 달성!',       done: has && goal !== null && todayRecord.weight <= goal,     locked: !has,  visible: goal !== null },
+  ].filter(m => m.visible);
+}
+
+function updateMissions() {
+  const el = document.getElementById('dailyMissions');
+  if (!el) return;
+
+  const missions = getMissionStates();
+  const completedCount = missions.filter(m => m.done).length;
+  const total = missions.length;
+  const allDone = completedCount === total;
+  const hasRecord = missions.find(m => m.id === 'record')?.done ?? false;
+
+  const rowsHTML = missions.map(m => {
+    let stateClass, circleHTML;
+    if (m.locked) {
+      stateClass = 'mission-locked';
+      circleHTML = '<span class="mission-circle mission-circle--locked">🔒</span>';
+    } else if (m.done) {
+      stateClass = 'mission-done';
+      circleHTML = '<span class="mission-circle mission-circle--done">✓</span>';
+    } else {
+      stateClass = 'mission-incomplete';
+      circleHTML = '<span class="mission-circle mission-circle--empty"></span>';
+    }
+    return `<div class="mission-row ${stateClass}">${circleHTML}<span class="mission-label">${m.icon} ${m.label}</span></div>`;
+  }).join('');
+
+  const pct = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+
+  const bottomHTML = allDone
+    ? `<div class="mission-celebration">🎉 오늘 미션 완료! 대단해요, 정말 멋진 하루예요!</div>`
+    : `<div class="mission-progress-wrap"><div class="mission-progress-bar" style="width:${pct}%"></div></div>
+       <span class="mission-progress-label">${completedCount}/${total} 완료</span>`;
+
+  const subtitleHTML = !hasRecord
+    ? `<p class="mission-subtitle">체중을 기록하면 미션이 활성화돼요 ✍️</p>`
+    : '';
+
+  el.innerHTML = `
+    <div class="mission-header">
+      <h2>일일 미션</h2>
+      <span class="mission-badge">${completedCount}/${total}</span>
+    </div>
+    ${subtitleHTML}
+    <div class="mission-list">${rowsHTML}</div>
+    ${bottomHTML}`;
+}
+
 function render() {
   const records = getRecords();
   updateStats(records);
   updateChart(records, currentPeriod);
   renderRecords(records);
+  updateMissions();
 }
 
 // Export
