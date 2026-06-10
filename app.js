@@ -405,14 +405,35 @@ function getMissionStates() {
   const thisWeek = records.filter(r => r.date >= weekStartStr);
 
   // Streak helpers
-  function hasStreak(n) {
-    for (let i = 0; i < n; i++) {
+  function calcStreak() {
+    let count = 0;
+    for (let i = 0; i < 99; i++) {
       const d = new Date(); d.setDate(d.getDate() - i);
       const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-      if (!records.find(r => r.date === ds)) return false;
+      if (records.find(r => r.date === ds)) count++;
+      else break;
     }
-    return true;
+    return count;
   }
+  const streak = calcStreak();
+
+  const exCount    = thisWeek.filter(r => r.exercise).length;
+  const soberCount = thisWeek.filter(r => !r.drink).length;
+
+  const autoDone = {
+    streak3:      streak >= 3,
+    streak7:      streak >= 7,
+    weekly3ex:    exCount >= 3,
+    weekly3sober: soberCount >= 3,
+    lowestweek:   has && thisWeek.length > 0 && todayRecord.weight <= Math.min(...thisWeek.map(r => r.weight)),
+  };
+
+  const autoProgress = {
+    streak3:      { cur: Math.min(streak, 3), max: 3 },
+    streak7:      { cur: Math.min(streak, 7), max: 7 },
+    weekly3ex:    { cur: Math.min(exCount,    3), max: 3 },
+    weekly3sober: { cur: Math.min(soberCount, 3), max: 3 },
+  };
 
   const fixed = [
     { id:'record',   icon:'📝', label:'오늘 체중 기록',   done: has,                                                    locked: false, visible: true },
@@ -424,19 +445,12 @@ function getMissionStates() {
 
   const checks = getDailyChecks(todayStr);
 
-  const autoDone = {
-    streak3:      hasStreak(3),
-    streak7:      hasStreak(7),
-    weekly3ex:    thisWeek.filter(r => r.exercise).length >= 3,
-    weekly3sober: thisWeek.filter(r => !r.drink).length >= 3,
-    lowestweek:   has && thisWeek.length > 0 && todayRecord.weight <= Math.min(...thisWeek.map(r => r.weight)),
-  };
-
   const bonus = getDailyBonusMissions().map(m => ({
     ...m,
-    done:   m.type === 'auto' ? (autoDone[m.id] ?? false) : checks.has(m.id),
-    locked: false,
-    visible: true,
+    done:     m.type === 'auto' ? (autoDone[m.id] ?? false) : checks.has(m.id),
+    locked:   false,
+    visible:  true,
+    progress: m.type === 'auto' ? (autoProgress[m.id] ?? null) : null,
   }));
 
   return [...fixed, ...bonus];
@@ -468,8 +482,11 @@ function updateMissions() {
       stateClass = 'mission-incomplete';
       circleHTML = '<span class="mission-circle mission-circle--empty"></span>';
     }
+    const chipHTML = m.progress
+      ? `<span class="mission-progress-chip ${m.done ? 'mission-progress-chip--done' : ''}">${m.progress.cur}/${m.progress.max}</span>`
+      : (m.type === 'manual' && !m.done ? '<span class="mission-tap-hint">탭하여 완료</span>' : '');
     const manualAttrs = m.type === 'manual' ? `data-mission-id="${m.id}" class="mission-row ${stateClass} mission-row--manual"` : `class="mission-row ${stateClass}"`;
-    return `<div ${manualAttrs}>${circleHTML}<span class="mission-label">${m.icon} ${m.label}</span>${m.type === 'manual' && !m.done ? '<span class="mission-tap-hint">탭하여 완료</span>' : ''}</div>`;
+    return `<div ${manualAttrs}>${circleHTML}<span class="mission-label">${m.icon} ${m.label}</span>${chipHTML}</div>`;
   }).join('');
 
   // Attach click handlers after innerHTML is set (done below)
