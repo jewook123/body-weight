@@ -766,16 +766,18 @@ input:focus {
 }
 
 .ms-icon-input {
-  width: 56px;
+  width: 64px;
   text-align: center;
-  font-size: 22px;
+  font-size: 15px;
   flex-shrink: 0;
+  align-self: stretch;
   padding: 10px 4px;
   border: 1.5px solid var(--border);
   border-radius: 8px;
   background: var(--card);
   color: var(--text);
   font-family: inherit;
+  line-height: 1.4;
 }
 
 .ms-icon-input:focus { outline: none; border-color: var(--primary); }
@@ -790,6 +792,8 @@ input:focus {
   background: var(--card);
   font-family: inherit;
   transition: border-color 0.15s;
+  resize: none;
+  line-height: 1.5;
 }
 
 .ms-label-input:focus { outline: none; border-color: var(--primary); }
