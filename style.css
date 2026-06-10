@@ -786,6 +786,7 @@ input:focus {
   transition: border-color 0.15s;
   resize: none;
   line-height: 1.5;
+  text-align: center;
 }
 
 .ms-label-input:focus { outline: none; border-color: var(--primary); }
