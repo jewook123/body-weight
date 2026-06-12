@@ -733,7 +733,7 @@ function soundExercise() { bellStrike(650, 1.8, 0.6); }
 function soundRest()     { bellStrike(500, 1.5, 0.45); setTimeout(() => bellStrike(500, 1.5, 0.35), 400); }
 function soundDone()     { [0, 180, 360, 540].forEach(t => setTimeout(() => bellStrike(580, 1.2, 0.5), t)); }
 
-const DONE_PHRASES = [
+const DEFAULT_PHRASES = [
   "Good boy~",
   "Amazing work!",
   "You crushed it!",
@@ -741,15 +741,44 @@ const DONE_PHRASES = [
   "That's what I'm talking about!",
   "You're on fire!",
 ];
+const PHRASES_KEY = 'bodyweight_phrases';
+function getPhrases() {
+  const saved = localStorage.getItem(PHRASES_KEY);
+  return saved ? JSON.parse(saved) : [...DEFAULT_PHRASES];
+}
+function savePhrases(arr) {
+  localStorage.setItem(PHRASES_KEY, JSON.stringify(arr));
+}
 function speakDone() {
   if (!window.speechSynthesis) return;
-  const phrase = DONE_PHRASES[Math.floor(Math.random() * DONE_PHRASES.length)];
+  const phrases = getPhrases();
+  if (!phrases.length) return;
+  const phrase = phrases[Math.floor(Math.random() * phrases.length)];
   const utt = new SpeechSynthesisUtterance(phrase);
   utt.lang = 'en-US';
   utt.rate = 0.9;
   utt.pitch = 1.1;
   speechSynthesis.cancel();
   speechSynthesis.speak(utt);
+}
+
+// Phrases panel
+function renderPhrasesList() {
+  const phrases = getPhrases();
+  const list = document.getElementById('phrasesList');
+  list.innerHTML = phrases.length
+    ? phrases.map((p, i) => `<div class="ms-row">
+        <span class="ms-label">${p}</span>
+        <button class="ms-delete" data-idx="${i}">삭제</button>
+      </div>`).join('')
+    : '<p class="ms-empty">등록된 멘트가 없어요</p>';
+}
+function openPhrasesPanel() {
+  renderPhrasesList();
+  openOverlay('phrasesPanel');
+}
+function closePhrasesPanel() {
+  closeOverlay('phrasesPanel');
 }
 
 // State
@@ -899,6 +928,45 @@ document.getElementById('tabataReset').addEventListener('click', () => {
   document.getElementById('tabataOverlay').style.background = '';
   showTabataView('idle');
 });
+
+// Phrases panel events
+document.getElementById('closePhrases').addEventListener('click', closePhrasesPanel);
+document.getElementById('phrasesPanel').addEventListener('click', e => {
+  if (e.target === document.getElementById('phrasesPanel')) closePhrasesPanel();
+});
+document.getElementById('phrasesList').addEventListener('click', e => {
+  const btn = e.target.closest('.ms-delete');
+  if (!btn) return;
+  const phrases = getPhrases();
+  phrases.splice(parseInt(btn.dataset.idx, 10), 1);
+  savePhrases(phrases);
+  renderPhrasesList();
+});
+document.getElementById('phrasesAddForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const text = document.getElementById('phrasesNewText').value.trim();
+  if (!text) return;
+  const phrases = getPhrases();
+  phrases.push(text);
+  savePhrases(phrases);
+  document.getElementById('phrasesNewText').value = '';
+  renderPhrasesList();
+  showToast('멘트가 추가됐어요!');
+});
+
+// Long-press on tabata done emoji/text to open phrases panel
+(function () {
+  const el = document.getElementById('tabataDone');
+  let timer;
+  const start = () => { timer = setTimeout(openPhrasesPanel, 600); };
+  const cancel = () => clearTimeout(timer);
+  el.addEventListener('touchstart', e => { if (e.target.closest('.tabata-done-emoji,.tabata-done-text')) start(); }, { passive: true });
+  el.addEventListener('touchend', cancel);
+  el.addEventListener('touchmove', cancel);
+  el.addEventListener('mousedown', e => { if (e.target.closest('.tabata-done-emoji,.tabata-done-text')) start(); });
+  el.addEventListener('mouseup', cancel);
+  el.addEventListener('mouseleave', cancel);
+})();
 
 // Init
 applyTheme(localStorage.getItem(THEME_KEY) || 'light');
