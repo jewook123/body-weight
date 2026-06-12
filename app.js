@@ -1173,7 +1173,16 @@ function showAffirmationView(view) {
 function updatePlayerDisplay() {
   const items = affState.items;
   const idx   = affState.currentIndex;
-  document.getElementById('affirmationPlayerText').textContent = items[idx]?.text || '';
+
+  const list = document.getElementById('affirmationPlayerList');
+  if (list) {
+    list.innerHTML = items.map((item, i) =>
+      `<div class="affirmation-player-item${i === idx ? ' affirmation-player-item--active' : ''}" data-idx="${i}">${item.text || ''}</div>`
+    ).join('');
+    const active = list.querySelector('.affirmation-player-item--active');
+    if (active) active.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+
   document.getElementById('affirmationProgressLabel').textContent = `${idx + 1} / ${items.length}`;
   document.getElementById('affirmationPauseBtn').textContent = affState.paused ? '▶' : '⏸';
 }
