@@ -714,14 +714,24 @@ function beep(freq, dur, vol = 0.4) {
     o.start(); o.stop(ctx.currentTime + dur);
   } catch(_) {}
 }
-function soundTick()     { beep(800, 0.08, 0.3); }
-function soundExercise() { beep(1000, 0.15); setTimeout(() => beep(1000, 0.25), 180); }
-function soundRest()     { beep(500, 0.45); }
-function soundDone()     {
-  [0, 200, 400, 700].forEach((t, i) =>
-    setTimeout(() => beep([523, 659, 784, 1047][i], 0.2), t)
-  );
+function bellStrike(freq, duration, vol = 0.5) {
+  try {
+    const ctx = getAudioCtx();
+    [freq, freq * 2.0, freq * 2.76].forEach((f, i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = f;
+      g.gain.setValueAtTime([vol, vol * 0.4, vol * 0.2][i], ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+      o.start(); o.stop(ctx.currentTime + duration);
+    });
+  } catch(_) {}
 }
+function soundTick()     { bellStrike(1100, 0.06, 0.35); }
+function soundExercise() { bellStrike(650, 1.8, 0.6); }
+function soundRest()     { bellStrike(500, 1.5, 0.45); setTimeout(() => bellStrike(500, 1.5, 0.35), 400); }
+function soundDone()     { [0, 180, 360, 540].forEach(t => setTimeout(() => bellStrike(580, 1.2, 0.5), t)); }
 
 // State
 const tabata = {
