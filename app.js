@@ -733,6 +733,25 @@ function soundExercise() { bellStrike(650, 1.8, 0.6); }
 function soundRest()     { bellStrike(500, 1.5, 0.45); setTimeout(() => bellStrike(500, 1.5, 0.35), 400); }
 function soundDone()     { [0, 180, 360, 540].forEach(t => setTimeout(() => bellStrike(580, 1.2, 0.5), t)); }
 
+const DONE_PHRASES = [
+  "Good boy~",
+  "Amazing work!",
+  "You crushed it!",
+  "Absolutely killing it!",
+  "That's what I'm talking about!",
+  "You're on fire!",
+];
+function speakDone() {
+  if (!window.speechSynthesis) return;
+  const phrase = DONE_PHRASES[Math.floor(Math.random() * DONE_PHRASES.length)];
+  const utt = new SpeechSynthesisUtterance(phrase);
+  utt.lang = 'en-US';
+  utt.rate = 0.9;
+  utt.pitch = 1.1;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utt);
+}
+
 // State
 const tabata = {
   phase: 'idle', // idle | prepare | exercise | rest | done
@@ -804,6 +823,7 @@ function tickTabata() {
         stopTabataTimer();
         tabata.phase = 'done';
         soundDone();
+        setTimeout(speakDone, 700);
         document.getElementById('tabataDoneSub').textContent =
           `${tabata.settings.rounds}라운드 모두 완료했어요 💪`;
         showTabataView('done');
