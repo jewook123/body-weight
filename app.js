@@ -71,15 +71,23 @@ function getDailyBonusMissions() {
   return [pool[i1], pool[i2]];
 }
 
+// Overlay helpers
+function openOverlay(id, lockScroll = true) {
+  document.getElementById(id).classList.add('open');
+  if (lockScroll) document.body.style.overflow = 'hidden';
+}
+function closeOverlay(id, lockScroll = true) {
+  document.getElementById(id).classList.remove('open');
+  if (lockScroll) document.body.style.overflow = '';
+}
+
 // Mission settings overlay
 function openMissionSettings() {
   renderMissionSettings();
-  document.getElementById('missionSettings').classList.add('open');
-  document.body.style.overflow = 'hidden';
+  openOverlay('missionSettings');
 }
 function closeMissionSettings() {
-  document.getElementById('missionSettings').classList.remove('open');
-  document.body.style.overflow = '';
+  closeOverlay('missionSettings');
 }
 
 function renderMissionSettings() {
@@ -108,31 +116,6 @@ function renderMissionSettings() {
 
   document.getElementById('msDefaultList').innerHTML = defaultRows;
   document.getElementById('msCustomList').innerHTML = customRows;
-
-  // Toggle handlers
-  document.querySelectorAll('.ms-toggle').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const cfg = getMissionCfg();
-      const s = new Set(cfg.disabled || []);
-      if (s.has(btn.dataset.id)) s.delete(btn.dataset.id);
-      else s.add(btn.dataset.id);
-      cfg.disabled = [...s];
-      saveMissionCfg(cfg);
-      renderMissionSettings();
-      updateMissions();
-    });
-  });
-
-  // Delete custom handler
-  document.querySelectorAll('.ms-delete').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const cfg = getMissionCfg();
-      cfg.custom = (cfg.custom || []).filter(m => m.id !== btn.dataset.id);
-      saveMissionCfg(cfg);
-      renderMissionSettings();
-      updateMissions();
-    });
-  });
 }
 
 // Storage
@@ -152,10 +135,10 @@ function saveGoal(val) {
 }
 
 // Helpers
-function today() {
-  const d = new Date();
+function toISODate(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
+function today() { return toISODate(new Date()); }
 function formatDateShort(s) { const [,m,d] = s.split('-'); return `${m}/${d}`; }
 function formatDateFull(s)  { const [y,m,d] = s.split('-'); return `${y}.${m}.${d}`; }
 
@@ -390,7 +373,7 @@ function getMissionStates() {
 
   const yDate = new Date();
   yDate.setDate(yDate.getDate() - 1);
-  const yStr = `${yDate.getFullYear()}-${String(yDate.getMonth()+1).padStart(2,'0')}-${String(yDate.getDate()).padStart(2,'0')}`;
+  const yStr = toISODate(yDate);
   const yRecord = records.find(r => r.date === yStr);
 
   const goal = getGoal();
@@ -409,8 +392,7 @@ function getMissionStates() {
     let count = 0;
     for (let i = 0; i < 99; i++) {
       const d = new Date(); d.setDate(d.getDate() - i);
-      const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-      if (records.find(r => r.date === ds)) count++;
+      if (records.find(r => r.date === toISODate(d))) count++;
       else break;
     }
     return count;
@@ -601,33 +583,30 @@ document.querySelectorAll('.period-btn').forEach(btn => {
 document.getElementById('goalBtn').addEventListener('click', () => {
   const goal = getGoal();
   document.getElementById('goalInput').value = goal !== null ? goal : '';
-  document.getElementById('goalModal').classList.add('open');
+  openOverlay('goalModal', false);
 });
 document.getElementById('cancelGoal').addEventListener('click', () => {
-  document.getElementById('goalModal').classList.remove('open');
+  closeOverlay('goalModal', false);
 });
 document.getElementById('saveGoal').addEventListener('click', () => {
   const raw = document.getElementById('goalInput').value;
   saveGoal(raw !== '' ? parseFloat(raw) : null);
-  document.getElementById('goalModal').classList.remove('open');
+  closeOverlay('goalModal', false);
   render();
 });
 document.getElementById('goalModal').addEventListener('click', e => {
-  if (e.target === document.getElementById('goalModal'))
-    document.getElementById('goalModal').classList.remove('open');
+  if (e.target === document.getElementById('goalModal')) closeOverlay('goalModal', false);
 });
 
 document.getElementById('expandRecordsBtn').addEventListener('click', () => {
   const records = getRecords();
   document.getElementById('recordsFullList').innerHTML = recordsHTML(records);
   document.getElementById('recordsCount').textContent = `${records.length}개`;
-  document.getElementById('recordsFullscreen').classList.add('open');
-  document.body.style.overflow = 'hidden';
+  openOverlay('recordsFullscreen');
 });
 
 document.getElementById('closeFullscreen').addEventListener('click', () => {
-  document.getElementById('recordsFullscreen').classList.remove('open');
-  document.body.style.overflow = '';
+  closeOverlay('recordsFullscreen');
 });
 
 document.getElementById('recordsFullList').addEventListener('click', e => {
@@ -675,6 +654,27 @@ document.getElementById('importFile').addEventListener('change', e => {
 document.getElementById('closeMissionSettings').addEventListener('click', closeMissionSettings);
 document.getElementById('missionSettings').addEventListener('click', e => {
   if (e.target === document.getElementById('missionSettings')) closeMissionSettings();
+});
+
+document.getElementById('msDefaultList').addEventListener('click', e => {
+  const btn = e.target.closest('.ms-toggle');
+  if (!btn) return;
+  const cfg = getMissionCfg();
+  const s = new Set(cfg.disabled || []);
+  if (s.has(btn.dataset.id)) s.delete(btn.dataset.id); else s.add(btn.dataset.id);
+  cfg.disabled = [...s];
+  saveMissionCfg(cfg);
+  renderMissionSettings();
+  updateMissions();
+});
+document.getElementById('msCustomList').addEventListener('click', e => {
+  const btn = e.target.closest('.ms-delete');
+  if (!btn) return;
+  const cfg = getMissionCfg();
+  cfg.custom = (cfg.custom || []).filter(m => m.id !== btn.dataset.id);
+  saveMissionCfg(cfg);
+  renderMissionSettings();
+  updateMissions();
 });
 
 document.getElementById('msAddForm').addEventListener('submit', e => {
@@ -776,14 +776,12 @@ function openTabata() {
   document.getElementById('restTimeSec').textContent = tabata.settings.restTime;
   document.getElementById('roundCount').textContent  = tabata.settings.rounds;
   showTabataView('idle');
-  document.getElementById('tabataOverlay').classList.add('open');
-  document.body.style.overflow = 'hidden';
+  openOverlay('tabataOverlay');
 }
 function closeTabata() {
   stopTabataTimer();
-  document.getElementById('tabataOverlay').classList.remove('open');
   document.getElementById('tabataOverlay').style.background = '';
-  document.body.style.overflow = '';
+  closeOverlay('tabataOverlay');
 }
 function showTabataView(view) {
   document.getElementById('tabataIdle').style.display    = view === 'idle'    ? 'flex' : 'none';
