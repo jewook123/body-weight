@@ -1086,6 +1086,7 @@ input:focus {
   flex-shrink: 0;
 }
 .tabata-header h2 { font-size: 17px; font-weight: 700; }
+.tabata-header-actions { display: flex; align-items: center; gap: 6px; }
 
 /* Settings */
 .tabata-idle {

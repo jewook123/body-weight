@@ -954,19 +954,7 @@ document.getElementById('phrasesAddForm').addEventListener('submit', e => {
   showToast('멘트가 추가됐어요!');
 });
 
-// Long-press on tabata header h2 to open phrases panel
-(function () {
-  const el = document.querySelector('#tabataOverlay .tabata-header');
-  let timer;
-  const start = () => { timer = setTimeout(openPhrasesPanel, 600); };
-  const cancel = () => clearTimeout(timer);
-  el.addEventListener('touchstart', e => { if (e.target.closest('h2')) start(); }, { passive: true });
-  el.addEventListener('touchend', cancel);
-  el.addEventListener('touchmove', cancel);
-  el.addEventListener('mousedown', e => { if (e.target.closest('h2')) start(); });
-  el.addEventListener('mouseup', cancel);
-  el.addEventListener('mouseleave', cancel);
-})();
+document.getElementById('tabataPhrasesBtn').addEventListener('click', openPhrasesPanel);
 
 // Init
 applyTheme(localStorage.getItem(THEME_KEY) || 'light');
