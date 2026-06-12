@@ -182,6 +182,28 @@
           <textarea id="affirmationNewText" placeholder="확언을 입력하세요&#10;예: 나는 매일 건강해지고 있다" class="affirmation-textarea" rows="3" required></textarea>
           <button type="submit" class="submit-btn">+ 추가</button>
         </form>
+        <!-- 음성 설정 -->
+        <div class="affirmation-voice-settings">
+          <div class="affirmation-voice-row">
+            <label class="affirmation-voice-label">🗣️ 음성</label>
+            <select id="affirmationVoiceSelect" class="affirmation-select"></select>
+          </div>
+          <div class="affirmation-voice-row">
+            <label class="affirmation-voice-label">⚡ 속도</label>
+            <input type="range" id="affirmationRate" min="0.3" max="2" step="0.05" value="0.75" class="affirmation-volume-slider">
+            <span class="affirmation-slider-val" id="affirmationRateVal">0.75</span>
+          </div>
+          <div class="affirmation-voice-row">
+            <label class="affirmation-voice-label">🎵 피치</label>
+            <input type="range" id="affirmationPitch" min="0.1" max="2" step="0.05" value="0.9" class="affirmation-volume-slider">
+            <span class="affirmation-slider-val" id="affirmationPitchVal">0.90</span>
+          </div>
+          <div class="affirmation-voice-row">
+            <label class="affirmation-voice-label">🔊 음량</label>
+            <input type="range" id="affirmationSpeechVol" min="0" max="100" value="100" class="affirmation-volume-slider">
+            <span class="affirmation-slider-val" id="affirmationSpeechVolVal">100%</span>
+          </div>
+        </div>
         <button class="tabata-action-btn" id="affirmationPlay" style="margin-top:auto">▶ 재생</button>
       </div>
 

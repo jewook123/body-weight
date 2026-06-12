@@ -1063,17 +1063,46 @@ function setHypnoVolume(vol) {
 }
 
 // 확언 TTS
+// 음성 목록 초기화 (브라우저가 비동기로 로드하는 경우 대응)
+function populateVoiceList() {
+  const sel = document.getElementById('affirmationVoiceSelect');
+  if (!sel || !window.speechSynthesis) return;
+  const voices = speechSynthesis.getVoices();
+  if (!voices.length) return;
+  const prev = sel.value;
+  sel.innerHTML = '';
+  voices.forEach((v, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    const lang = v.lang ? ` (${v.lang})` : '';
+    opt.textContent = `${v.name}${lang}`;
+    if (v.lang.startsWith('ko')) opt.textContent = '★ ' + opt.textContent;
+    sel.appendChild(opt);
+  });
+  // 기본값: 한국어 음성 우선
+  const koIdx = voices.findIndex(v => v.lang.startsWith('ko'));
+  sel.value = prev || (koIdx !== -1 ? koIdx : 0);
+}
+
+if (window.speechSynthesis) {
+  populateVoiceList();
+  speechSynthesis.addEventListener('voiceschanged', populateVoiceList);
+}
+
 function speakAffirmation(text, onEnd) {
   if (!window.speechSynthesis) { onEnd?.(); return; }
   speechSynthesis.cancel();
   const utt = new SpeechSynthesisUtterance(text);
+
   const voices = speechSynthesis.getVoices();
-  const koVoice = voices.find(v => v.lang.startsWith('ko'));
-  if (koVoice) utt.voice = koVoice;
-  utt.lang  = 'ko-KR';
-  utt.rate  = 0.75;
-  utt.pitch = 0.9;
-  utt.onend = () => onEnd?.();
+  const selEl  = document.getElementById('affirmationVoiceSelect');
+  const voiceIdx = selEl ? parseInt(selEl.value, 10) : -1;
+  if (voices[voiceIdx]) utt.voice = voices[voiceIdx];
+
+  utt.rate   = parseFloat(document.getElementById('affirmationRate')?.value  ?? 0.75);
+  utt.pitch  = parseFloat(document.getElementById('affirmationPitch')?.value ?? 0.9);
+  utt.volume = parseInt(document.getElementById('affirmationSpeechVol')?.value ?? 100, 10) / 100;
+  utt.onend  = () => onEnd?.();
   speechSynthesis.speak(utt);
 }
 
@@ -1226,6 +1255,16 @@ document.getElementById('affirmationSkipBtn').addEventListener('click', skipAffi
 document.getElementById('affirmationVolume').addEventListener('input', e => {
   const vol = parseInt(e.target.value, 10) / 100 * 0.6;
   if (affState.playing && !affState.paused) setHypnoVolume(vol);
+});
+
+document.getElementById('affirmationRate').addEventListener('input', e => {
+  document.getElementById('affirmationRateVal').textContent = parseFloat(e.target.value).toFixed(2);
+});
+document.getElementById('affirmationPitch').addEventListener('input', e => {
+  document.getElementById('affirmationPitchVal').textContent = parseFloat(e.target.value).toFixed(2);
+});
+document.getElementById('affirmationSpeechVol').addEventListener('input', e => {
+  document.getElementById('affirmationSpeechVolVal').textContent = e.target.value + '%';
 });
 
 // Init
