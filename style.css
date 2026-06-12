@@ -1254,6 +1254,174 @@ input:focus {
 .tabata-done-text  { font-size: 40px; font-weight: 800; }
 .tabata-done-sub   { font-size: 16px; color: var(--text-secondary); margin-bottom: 8px; }
 
+/* ── 긍정 확언 ─────────────────────────────────────────────────────────────── */
+.affirmation-list-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.affirmation-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.affirmation-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.affirmation-item-num {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+
+.affirmation-item-text {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.affirmation-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.affirmation-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  line-height: 1.5;
+  transition: border-color 0.15s;
+}
+.affirmation-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* 재생 화면 */
+.affirmation-player-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.affirmation-player-text {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.6;
+  color: var(--text);
+  max-width: 380px;
+  animation: affirmFadeIn 0.6s ease;
+  word-break: keep-all;
+  white-space: pre-wrap;
+}
+
+@keyframes affirmFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.affirmation-progress-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.affirmation-volume-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.affirmation-volume-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.affirmation-volume-slider {
+  flex: 1;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.affirmation-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.affirmation-ctrl-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.affirmation-ctrl-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.affirmation-ctrl-btn--main {
+  width: 68px;
+  height: 68px;
+  font-size: 26px;
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+.affirmation-ctrl-btn--main:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  color: white;
+}
+
 /* Responsive */
 @media (max-width: 540px) {
   .stats {
