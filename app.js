@@ -954,16 +954,16 @@ document.getElementById('phrasesAddForm').addEventListener('submit', e => {
   showToast('멘트가 추가됐어요!');
 });
 
-// Long-press on tabata done emoji/text to open phrases panel
+// Long-press on tabata header h2 to open phrases panel
 (function () {
-  const el = document.getElementById('tabataDone');
+  const el = document.querySelector('#tabataOverlay .tabata-header');
   let timer;
   const start = () => { timer = setTimeout(openPhrasesPanel, 600); };
   const cancel = () => clearTimeout(timer);
-  el.addEventListener('touchstart', e => { if (e.target.closest('.tabata-done-emoji,.tabata-done-text')) start(); }, { passive: true });
+  el.addEventListener('touchstart', e => { if (e.target.closest('h2')) start(); }, { passive: true });
   el.addEventListener('touchend', cancel);
   el.addEventListener('touchmove', cancel);
-  el.addEventListener('mousedown', e => { if (e.target.closest('.tabata-done-emoji,.tabata-done-text')) start(); });
+  el.addEventListener('mousedown', e => { if (e.target.closest('h2')) start(); });
   el.addEventListener('mouseup', cancel);
   el.addEventListener('mouseleave', cancel);
 })();
