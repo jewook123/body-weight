@@ -809,6 +809,7 @@ function openTabata() {
 }
 function closeTabata() {
   stopTabataTimer();
+  closePhrasesPanel();
   document.getElementById('tabataOverlay').style.background = '';
   closeOverlay('tabataOverlay');
 }
