@@ -957,6 +957,277 @@ document.getElementById('phrasesAddForm').addEventListener('submit', e => {
 
 document.getElementById('tabataPhrasesBtn').addEventListener('click', openPhrasesPanel);
 
+// ── 긍정 확언 플레이리스트 ────────────────────────────────────────────────────
+const AFFIRMATION_KEY = 'bodyweight_affirmations';
+
+function getAffirmations() {
+  return JSON.parse(localStorage.getItem(AFFIRMATION_KEY) || '[]');
+}
+function saveAffirmations(arr) {
+  localStorage.setItem(AFFIRMATION_KEY, JSON.stringify(arr));
+}
+
+// 최면/명상 배경음 노드 참조
+let hypnoNodes = null;
+let hypnoMasterGain = null;
+
+function startHypnoticMusic(volume) {
+  try {
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+
+    hypnoMasterGain = ctx.createGain();
+    hypnoMasterGain.gain.setValueAtTime(0, ctx.currentTime);
+    hypnoMasterGain.gain.linearRampToValueAtTime(volume, ctx.currentTime + 3);
+    hypnoMasterGain.connect(ctx.destination);
+
+    // 드론음 A: 432 Hz
+    const osc1 = ctx.createOscillator();
+    const g1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.value = 432;
+    g1.gain.value = 0.35;
+    osc1.connect(g1); g1.connect(hypnoMasterGain);
+    osc1.start();
+
+    // 드론음 B: 436 Hz (binaural beat 4 Hz — 세타파)
+    const osc2 = ctx.createOscillator();
+    const g2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.value = 436;
+    g2.gain.value = 0.35;
+    osc2.connect(g2); g2.connect(hypnoMasterGain);
+    osc2.start();
+
+    // 저주파 서브 베이스 (128 Hz)
+    const osc3 = ctx.createOscillator();
+    const g3 = ctx.createGain();
+    osc3.type = 'sine';
+    osc3.frequency.value = 128;
+    g3.gain.value = 0.15;
+    osc3.connect(g3); g3.connect(hypnoMasterGain);
+    osc3.start();
+
+    // 느린 LFO (0.05 Hz) — 볼륨 천천히 맥동
+    const lfo = ctx.createOscillator();
+    const lfoGain = ctx.createGain();
+    lfo.type = 'sine';
+    lfo.frequency.value = 0.05;
+    lfoGain.gain.value = 0.08;
+    lfo.connect(lfoGain); lfoGain.connect(hypnoMasterGain.gain);
+    lfo.start();
+
+    // 화이트 노이즈 (lowpass 필터로 부드럽게)
+    const bufSize = ctx.sampleRate * 4;
+    const noiseBuffer = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const data = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource();
+    noise.buffer = noiseBuffer;
+    noise.loop = true;
+    const lpf = ctx.createBiquadFilter();
+    lpf.type = 'lowpass';
+    lpf.frequency.value = 200;
+    const ng = ctx.createGain();
+    ng.gain.value = 0.04;
+    noise.connect(lpf); lpf.connect(ng); ng.connect(hypnoMasterGain);
+    noise.start();
+
+    hypnoNodes = [osc1, osc2, osc3, lfo, noise];
+  } catch(_) {}
+}
+
+function stopHypnoticMusic() {
+  try {
+    if (hypnoMasterGain) {
+      const ctx = getAudioCtx();
+      hypnoMasterGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.5);
+      const nodes = hypnoNodes;
+      const gain  = hypnoMasterGain;
+      setTimeout(() => {
+        nodes?.forEach(n => { try { n.stop(); } catch(_) {} });
+        gain?.disconnect();
+      }, 1600);
+      hypnoNodes = null;
+      hypnoMasterGain = null;
+    }
+  } catch(_) {}
+}
+
+function setHypnoVolume(vol) {
+  if (hypnoMasterGain) {
+    try {
+      hypnoMasterGain.gain.setTargetAtTime(vol, getAudioCtx().currentTime, 0.3);
+    } catch(_) {}
+  }
+}
+
+// 확언 TTS
+function speakAffirmation(text, onEnd) {
+  if (!window.speechSynthesis) { onEnd?.(); return; }
+  speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  const voices = speechSynthesis.getVoices();
+  const koVoice = voices.find(v => v.lang.startsWith('ko'));
+  if (koVoice) utt.voice = koVoice;
+  utt.lang  = 'ko-KR';
+  utt.rate  = 0.75;
+  utt.pitch = 0.9;
+  utt.onend = () => onEnd?.();
+  speechSynthesis.speak(utt);
+}
+
+// 확언 상태
+const affState = {
+  playing: false,
+  paused: false,
+  currentIndex: 0,
+  items: [],
+  pauseTimeout: null,
+};
+
+function renderAffirmationItems() {
+  const items = getAffirmations();
+  const el = document.getElementById('affirmationItems');
+  if (!items.length) {
+    el.innerHTML = '<p class="ms-empty">확언을 추가해보세요 🌱</p>';
+    return;
+  }
+  el.innerHTML = items.map((text, i) => `
+    <div class="affirmation-item">
+      <span class="affirmation-item-num">${i + 1}</span>
+      <span class="affirmation-item-text">${text}</span>
+      <button class="ms-delete" data-idx="${i}">삭제</button>
+    </div>`).join('');
+}
+
+function showAffirmationView(view) {
+  document.getElementById('affirmationList').style.display   = view === 'list'   ? 'flex' : 'none';
+  document.getElementById('affirmationPlayer').style.display = view === 'player' ? 'flex' : 'none';
+}
+
+function updatePlayerDisplay() {
+  const items = affState.items;
+  const idx   = affState.currentIndex;
+  document.getElementById('affirmationPlayerText').textContent = items[idx] || '';
+  document.getElementById('affirmationProgressLabel').textContent = `${idx + 1} / ${items.length}`;
+  document.getElementById('affirmationPauseBtn').textContent = affState.paused ? '▶' : '⏸';
+}
+
+function playNextAffirmation() {
+  if (!affState.playing) return;
+  updatePlayerDisplay();
+
+  // 확언 읽기 후 1.5초 쉬고 다음으로
+  speakAffirmation(affState.items[affState.currentIndex], () => {
+    if (!affState.playing || affState.paused) return;
+    affState.pauseTimeout = setTimeout(() => {
+      if (!affState.playing || affState.paused) return;
+      affState.currentIndex = (affState.currentIndex + 1) % affState.items.length;
+      playNextAffirmation();
+    }, 1500);
+  });
+}
+
+function startAffirmations() {
+  const items = getAffirmations();
+  if (!items.length) { showToast('확언을 먼저 추가해주세요!'); return; }
+  affState.playing      = true;
+  affState.paused       = false;
+  affState.currentIndex = 0;
+  affState.items        = [...items];
+
+  const vol = parseInt(document.getElementById('affirmationVolume').value, 10) / 100 * 0.6;
+  startHypnoticMusic(vol);
+  showAffirmationView('player');
+  playNextAffirmation();
+}
+
+function pauseResumeAffirmations() {
+  if (!affState.playing) return;
+  if (affState.paused) {
+    affState.paused = false;
+    const vol = parseInt(document.getElementById('affirmationVolume').value, 10) / 100 * 0.6;
+    setHypnoVolume(vol);
+    speechSynthesis.resume();
+    // resume이 안 될 경우 현재 항목부터 다시 재생
+    if (!speechSynthesis.speaking) playNextAffirmation();
+    document.getElementById('affirmationPauseBtn').textContent = '⏸';
+  } else {
+    affState.paused = true;
+    clearTimeout(affState.pauseTimeout);
+    speechSynthesis.pause();
+    setHypnoVolume(0.05);
+    document.getElementById('affirmationPauseBtn').textContent = '▶';
+  }
+}
+
+function stopAffirmations() {
+  affState.playing = false;
+  affState.paused  = false;
+  clearTimeout(affState.pauseTimeout);
+  speechSynthesis.cancel();
+  stopHypnoticMusic();
+  showAffirmationView('list');
+}
+
+function skipAffirmation() {
+  if (!affState.playing) return;
+  clearTimeout(affState.pauseTimeout);
+  speechSynthesis.cancel();
+  affState.currentIndex = (affState.currentIndex + 1) % affState.items.length;
+  if (!affState.paused) playNextAffirmation();
+  else updatePlayerDisplay();
+}
+
+function openAffirmation() {
+  renderAffirmationItems();
+  showAffirmationView('list');
+  openOverlay('affirmationOverlay');
+}
+function closeAffirmation() {
+  stopAffirmations();
+  closeOverlay('affirmationOverlay');
+}
+
+// 확언 이벤트
+document.getElementById('affirmationBtn').addEventListener('click', openAffirmation);
+document.getElementById('affirmationClose').addEventListener('click', closeAffirmation);
+document.getElementById('affirmationOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('affirmationOverlay')) closeAffirmation();
+});
+
+document.getElementById('affirmationAddForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const text = document.getElementById('affirmationNewText').value.trim();
+  if (!text) return;
+  const items = getAffirmations();
+  items.push(text);
+  saveAffirmations(items);
+  document.getElementById('affirmationNewText').value = '';
+  renderAffirmationItems();
+  showToast('확언이 추가됐어요 ✨');
+});
+
+document.getElementById('affirmationItems').addEventListener('click', e => {
+  const btn = e.target.closest('.ms-delete');
+  if (!btn) return;
+  const items = getAffirmations();
+  items.splice(parseInt(btn.dataset.idx, 10), 1);
+  saveAffirmations(items);
+  renderAffirmationItems();
+});
+
+document.getElementById('affirmationPlay').addEventListener('click', startAffirmations);
+document.getElementById('affirmationPauseBtn').addEventListener('click', pauseResumeAffirmations);
+document.getElementById('affirmationStopBtn').addEventListener('click', stopAffirmations);
+document.getElementById('affirmationSkipBtn').addEventListener('click', skipAffirmation);
+
+document.getElementById('affirmationVolume').addEventListener('input', e => {
+  const vol = parseInt(e.target.value, 10) / 100 * 0.6;
+  if (affState.playing && !affState.paused) setHypnoVolume(vol);
+});
+
 // Init
 applyTheme(localStorage.getItem(THEME_KEY) || 'light');
 document.getElementById('date').value = today();
