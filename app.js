@@ -693,6 +693,185 @@ document.getElementById('msAddForm').addEventListener('submit', e => {
   showToast('미션이 추가됐어요!');
 });
 
+// ── Tabata Timer ──────────────────────────────────────────────────────────────
+const TABATA_KEY = 'bodyweight_tabata';
+
+// Web Audio beeps
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function beep(freq, dur, vol = 0.4) {
+  try {
+    const ctx = getAudioCtx();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(vol, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    o.start(); o.stop(ctx.currentTime + dur);
+  } catch(_) {}
+}
+function soundTick()     { beep(800, 0.08, 0.3); }
+function soundExercise() { beep(1000, 0.15); setTimeout(() => beep(1000, 0.25), 180); }
+function soundRest()     { beep(500, 0.45); }
+function soundDone()     {
+  [0, 200, 400, 700].forEach((t, i) =>
+    setTimeout(() => beep([523, 659, 784, 1047][i], 0.2), t)
+  );
+}
+
+// State
+const tabata = {
+  phase: 'idle', // idle | prepare | exercise | rest | done
+  round: 1,
+  timeLeft: 3,
+  settings: { exTime: 40, restTime: 10, rounds: 8 },
+  paused: false,
+  intervalId: null,
+};
+
+function loadTabataSettings() {
+  try { return JSON.parse(localStorage.getItem(TABATA_KEY)) || {}; } catch { return {}; }
+}
+function saveTabataSettings() {
+  localStorage.setItem(TABATA_KEY, JSON.stringify(tabata.settings));
+}
+
+function openTabata() {
+  const saved = loadTabataSettings();
+  tabata.settings = { exTime: 40, restTime: 10, rounds: 8, ...saved };
+  document.getElementById('exTimeSec').textContent   = tabata.settings.exTime;
+  document.getElementById('restTimeSec').textContent = tabata.settings.restTime;
+  document.getElementById('roundCount').textContent  = tabata.settings.rounds;
+  showTabataView('idle');
+  document.getElementById('tabataOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeTabata() {
+  stopTabataTimer();
+  document.getElementById('tabataOverlay').classList.remove('open');
+  document.getElementById('tabataOverlay').style.background = '';
+  document.body.style.overflow = '';
+}
+function showTabataView(view) {
+  document.getElementById('tabataIdle').style.display    = view === 'idle'    ? 'flex' : 'none';
+  document.getElementById('tabataRunning').style.display = view === 'running' ? 'flex' : 'none';
+  document.getElementById('tabataDone').style.display    = view === 'done'    ? 'flex' : 'none';
+}
+
+function startTabataTimer() {
+  tabata.phase    = 'prepare';
+  tabata.round    = 1;
+  tabata.timeLeft = 3;
+  tabata.paused   = false;
+  document.getElementById('tabataPause').textContent = '일시정지';
+  showTabataView('running');
+  updateTabataDisplay();
+  soundTick();
+  tabata.intervalId = setInterval(tickTabata, 1000);
+}
+function stopTabataTimer() {
+  clearInterval(tabata.intervalId);
+  tabata.intervalId = null;
+}
+
+function tickTabata() {
+  if (tabata.paused) return;
+  tabata.timeLeft--;
+
+  if (tabata.timeLeft > 0 && tabata.timeLeft <= 3) soundTick();
+
+  if (tabata.timeLeft <= 0) {
+    if (tabata.phase === 'prepare') {
+      tabata.phase    = 'exercise';
+      tabata.timeLeft = tabata.settings.exTime;
+      soundExercise();
+    } else if (tabata.phase === 'exercise') {
+      if (tabata.round >= tabata.settings.rounds) {
+        stopTabataTimer();
+        tabata.phase = 'done';
+        soundDone();
+        document.getElementById('tabataDoneSub').textContent =
+          `${tabata.settings.rounds}라운드 모두 완료했어요 💪`;
+        showTabataView('done');
+        document.getElementById('tabataOverlay').style.background = '';
+        return;
+      }
+      tabata.phase    = 'rest';
+      tabata.timeLeft = tabata.settings.restTime;
+      soundRest();
+    } else if (tabata.phase === 'rest') {
+      tabata.round++;
+      tabata.phase    = 'exercise';
+      tabata.timeLeft = tabata.settings.exTime;
+      soundExercise();
+    }
+  }
+  updateTabataDisplay();
+}
+
+function updateTabataDisplay() {
+  const { phase, round, timeLeft, settings } = tabata;
+  const phaseEl = document.getElementById('tabataPhaseLabel');
+  const roundEl = document.getElementById('tabataRoundLabel');
+  const timeEl  = document.getElementById('tabataTimeDisplay');
+
+  const labels  = { prepare: '준비', exercise: '운동', rest: '휴식' };
+  const classes = { prepare: 'phase-prepare', exercise: 'phase-exercise', rest: 'phase-rest' };
+  const bgLight = { exercise: '#f0fdf4', rest: '#eff6ff', prepare: '' };
+  const bgDark  = { exercise: '#052e16', rest: '#0c1a3a', prepare: '' };
+
+  phaseEl.textContent = labels[phase] || '';
+  phaseEl.className   = `tabata-phase-label ${classes[phase] || ''}`;
+  roundEl.textContent = phase === 'prepare' ? '시작 준비' : `${round} / ${settings.rounds}`;
+  timeEl.textContent  = timeLeft;
+  timeEl.className    = `tabata-time-display ${classes[phase] || ''}`;
+
+  const bg = isDark() ? bgDark[phase] : bgLight[phase];
+  document.getElementById('tabataOverlay').style.background = bg || '';
+}
+
+// Stepper helper
+function makeStepper(decId, incId, key, displayId, step, min, max) {
+  document.getElementById(decId).addEventListener('click', () => {
+    tabata.settings[key] = Math.max(min, tabata.settings[key] - step);
+    document.getElementById(displayId).textContent = tabata.settings[key];
+  });
+  document.getElementById(incId).addEventListener('click', () => {
+    tabata.settings[key] = Math.min(max, tabata.settings[key] + step);
+    document.getElementById(displayId).textContent = tabata.settings[key];
+  });
+}
+makeStepper('exDec',   'exInc',   'exTime',   'exTimeSec',   5, 5,  300);
+makeStepper('restDec', 'restInc', 'restTime', 'restTimeSec', 5, 5,  300);
+makeStepper('roundDec','roundInc','rounds',   'roundCount',  1, 1,  99);
+
+document.getElementById('tabataFab').addEventListener('click', openTabata);
+document.getElementById('tabataClose').addEventListener('click', closeTabata);
+document.getElementById('tabataOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('tabataOverlay')) closeTabata();
+});
+document.getElementById('tabataStart').addEventListener('click', () => {
+  saveTabataSettings();
+  startTabataTimer();
+});
+document.getElementById('tabataAgain').addEventListener('click', () => {
+  document.getElementById('tabataOverlay').style.background = '';
+  showTabataView('idle');
+});
+document.getElementById('tabataPause').addEventListener('click', () => {
+  tabata.paused = !tabata.paused;
+  document.getElementById('tabataPause').textContent = tabata.paused ? '계속하기' : '일시정지';
+});
+document.getElementById('tabataReset').addEventListener('click', () => {
+  stopTabataTimer();
+  document.getElementById('tabataOverlay').style.background = '';
+  showTabataView('idle');
+});
+
 // Init
 applyTheme(localStorage.getItem(THEME_KEY) || 'light');
 document.getElementById('date').value = today();

@@ -148,6 +148,69 @@
 
   <div class="toast" id="toast"></div>
 
+  <!-- Tabata FAB -->
+  <button class="tabata-fab" id="tabataFab">⏱️</button>
+
+  <!-- Tabata Overlay -->
+  <div class="tabata-overlay" id="tabataOverlay">
+    <div class="tabata-panel">
+      <div class="tabata-header">
+        <h2>⏱️ 타바타 타이머</h2>
+        <button class="close-fs-btn" id="tabataClose">✕</button>
+      </div>
+
+      <!-- 설정 화면 -->
+      <div id="tabataIdle" class="tabata-idle">
+        <div class="tabata-settings">
+          <div class="tabata-setting-row">
+            <span class="tabata-setting-label">운동 시간</span>
+            <div class="tabata-stepper">
+              <button class="stepper-btn" id="exDec">−</button>
+              <span class="stepper-val"><span id="exTimeSec">40</span><span class="stepper-unit">초</span></span>
+              <button class="stepper-btn" id="exInc">+</button>
+            </div>
+          </div>
+          <div class="tabata-setting-row">
+            <span class="tabata-setting-label">휴식 시간</span>
+            <div class="tabata-stepper">
+              <button class="stepper-btn" id="restDec">−</button>
+              <span class="stepper-val"><span id="restTimeSec">10</span><span class="stepper-unit">초</span></span>
+              <button class="stepper-btn" id="restInc">+</button>
+            </div>
+          </div>
+          <div class="tabata-setting-row">
+            <span class="tabata-setting-label">라운드</span>
+            <div class="tabata-stepper">
+              <button class="stepper-btn" id="roundDec">−</button>
+              <span class="stepper-val"><span id="roundCount">8</span><span class="stepper-unit">회</span></span>
+              <button class="stepper-btn" id="roundInc">+</button>
+            </div>
+          </div>
+        </div>
+        <button class="tabata-action-btn" id="tabataStart">시작</button>
+      </div>
+
+      <!-- 타이머 화면 -->
+      <div id="tabataRunning" class="tabata-running" style="display:none">
+        <div class="tabata-phase-label" id="tabataPhaseLabel">준비</div>
+        <div class="tabata-round-label" id="tabataRoundLabel">시작 준비</div>
+        <div class="tabata-time-display" id="tabataTimeDisplay">3</div>
+        <div class="tabata-timer-controls">
+          <button class="tabata-ctrl-btn" id="tabataPause">일시정지</button>
+          <button class="tabata-ctrl-btn tabata-ctrl-btn--secondary" id="tabataReset">처음으로</button>
+        </div>
+      </div>
+
+      <!-- 완료 화면 -->
+      <div id="tabataDone" class="tabata-done" style="display:none">
+        <div class="tabata-done-emoji">🎉</div>
+        <div class="tabata-done-text">완료!</div>
+        <p class="tabata-done-sub" id="tabataDoneSub"></p>
+        <button class="tabata-action-btn" id="tabataAgain">다시 하기</button>
+      </div>
+    </div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>

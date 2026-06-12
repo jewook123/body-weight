@@ -1030,6 +1030,227 @@ input:focus {
   100% { transform: scale(1);    opacity: 1; }
 }
 
+/* ── Tabata Timer ──────────────────────────────────────────────────────────── */
+
+.tabata-fab {
+  position: fixed;
+  bottom: 28px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  font-size: 24px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(59,130,246,0.45);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.tabata-fab:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 24px rgba(59,130,246,0.55);
+}
+
+.tabata-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 160;
+  flex-direction: column;
+  transition: background 0.4s;
+}
+.tabata-overlay.open { display: flex; }
+
+.tabata-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.tabata-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.tabata-header h2 { font-size: 17px; font-weight: 700; }
+
+/* Settings */
+.tabata-idle {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 32px 20px;
+  gap: 24px;
+}
+.tabata-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: var(--card);
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1.5px solid var(--border);
+}
+.tabata-setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.tabata-setting-row:last-child { border-bottom: none; }
+
+.tabata-setting-label {
+  font-size: 16px;
+  font-weight: 600;
+}
+.tabata-stepper {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.stepper-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  font-size: 22px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  font-family: inherit;
+  line-height: 1;
+}
+.stepper-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+.stepper-val {
+  min-width: 52px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+}
+.stepper-unit {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  margin-left: 2px;
+}
+
+.tabata-action-btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  width: 100%;
+  transition: background 0.15s;
+}
+.tabata-action-btn:hover { background: var(--primary-hover); }
+
+/* Timer */
+.tabata-running {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px 20px;
+}
+.tabata-phase-label {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  transition: color 0.3s;
+}
+.tabata-phase-label.phase-exercise { color: #16a34a; }
+.tabata-phase-label.phase-rest     { color: var(--primary); }
+
+.tabata-round-label {
+  font-size: 16px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+.tabata-time-display {
+  font-size: 128px;
+  font-weight: 800;
+  letter-spacing: -6px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  transition: color 0.3s;
+  margin-bottom: 16px;
+}
+.tabata-time-display.phase-exercise { color: #16a34a; }
+.tabata-time-display.phase-rest     { color: var(--primary); }
+
+.tabata-timer-controls {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  max-width: 320px;
+}
+.tabata-ctrl-btn {
+  flex: 1;
+  padding: 14px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  background: var(--primary);
+  color: white;
+  transition: background 0.15s;
+}
+.tabata-ctrl-btn:hover { background: var(--primary-hover); }
+.tabata-ctrl-btn--secondary {
+  background: var(--border);
+  color: var(--text);
+}
+.tabata-ctrl-btn--secondary:hover { background: var(--text-secondary); color: white; }
+
+/* Done */
+.tabata-done {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 32px 20px;
+  text-align: center;
+}
+.tabata-done-emoji { font-size: 80px; }
+.tabata-done-text  { font-size: 40px; font-weight: 800; }
+.tabata-done-sub   { font-size: 16px; color: var(--text-secondary); margin-bottom: 8px; }
+
 /* Responsive */
 @media (max-width: 540px) {
   .stats {
