@@ -961,7 +961,9 @@ document.getElementById('tabataPhrasesBtn').addEventListener('click', openPhrase
 const AFFIRMATION_KEY = 'bodyweight_affirmations';
 
 function getAffirmations() {
-  return JSON.parse(localStorage.getItem(AFFIRMATION_KEY) || '[]');
+  const raw = JSON.parse(localStorage.getItem(AFFIRMATION_KEY) || '[]');
+  // 이전 버전(string 배열) 마이그레이션
+  return raw.map(item => typeof item === 'string' ? { text: item, voiceName: '' } : item);
 }
 function saveAffirmations(arr) {
   localStorage.setItem(AFFIRMATION_KEY, JSON.stringify(arr));
@@ -1062,42 +1064,67 @@ function setHypnoVolume(vol) {
   }
 }
 
-// 확언 TTS
+// 확언 TTS — 한국어/영어 음성만 사용
+function getKoEnVoices() {
+  if (!window.speechSynthesis) return [];
+  return speechSynthesis.getVoices().filter(v => v.lang.startsWith('ko') || v.lang.startsWith('en'));
+}
+
+function buildVoiceOptions(selectedName) {
+  const voices = getKoEnVoices();
+  if (!voices.length) return '<option value="">음성 로딩 중...</option>';
+  return voices.map(v => {
+    const flag = v.lang.startsWith('ko') ? '🇰🇷 ' : '🇺🇸 ';
+    const sel  = v.name === selectedName ? ' selected' : '';
+    return `<option value="${v.name}"${sel}>${flag}${v.name} (${v.lang})</option>`;
+  }).join('');
+}
+
 // 음성 목록 초기화 (브라우저가 비동기로 로드하는 경우 대응)
-function populateVoiceList() {
-  const sel = document.getElementById('affirmationVoiceSelect');
-  if (!sel || !window.speechSynthesis) return;
-  const voices = speechSynthesis.getVoices();
+function populateVoiceSelects() {
+  if (!window.speechSynthesis) return;
+  const voices = getKoEnVoices();
   if (!voices.length) return;
-  const prev = sel.value;
-  sel.innerHTML = '';
-  voices.forEach((v, i) => {
-    const opt = document.createElement('option');
-    opt.value = i;
-    const lang = v.lang ? ` (${v.lang})` : '';
-    opt.textContent = `${v.name}${lang}`;
-    if (v.lang.startsWith('ko')) opt.textContent = '★ ' + opt.textContent;
-    sel.appendChild(opt);
+
+  // 추가 폼의 음성 선택
+  const newSel = document.getElementById('affirmationNewVoice');
+  if (newSel) {
+    const prev = newSel.value;
+    newSel.innerHTML = buildVoiceOptions(prev);
+    // 기본값: 한국어 음성 우선
+    if (!prev) {
+      const koVoice = voices.find(v => v.lang.startsWith('ko'));
+      newSel.value = koVoice ? koVoice.name : voices[0].name;
+    }
+  }
+
+  // 기존 아이템 행의 음성 선택 (렌더링 후 채움)
+  document.querySelectorAll('.affirmation-item-voice').forEach(sel => {
+    const current = sel.value;
+    sel.innerHTML = buildVoiceOptions(current);
+    if (current) sel.value = current;
   });
-  // 기본값: 한국어 음성 우선
-  const koIdx = voices.findIndex(v => v.lang.startsWith('ko'));
-  sel.value = prev || (koIdx !== -1 ? koIdx : 0);
 }
 
 if (window.speechSynthesis) {
-  populateVoiceList();
-  speechSynthesis.addEventListener('voiceschanged', populateVoiceList);
+  populateVoiceSelects();
+  speechSynthesis.addEventListener('voiceschanged', populateVoiceSelects);
 }
 
-function speakAffirmation(text, onEnd) {
+function speakAffirmation(item, onEnd) {
   if (!window.speechSynthesis) { onEnd?.(); return; }
   speechSynthesis.cancel();
-  const utt = new SpeechSynthesisUtterance(text);
+  const utt = new SpeechSynthesisUtterance(item.text);
 
-  const voices = speechSynthesis.getVoices();
-  const selEl  = document.getElementById('affirmationVoiceSelect');
-  const voiceIdx = selEl ? parseInt(selEl.value, 10) : -1;
-  if (voices[voiceIdx]) utt.voice = voices[voiceIdx];
+  const voices = getKoEnVoices();
+  const found  = voices.find(v => v.name === item.voiceName);
+  if (found) {
+    utt.voice = found;
+  } else {
+    // voiceName 미지정 시 한국어 음성 기본
+    const ko = voices.find(v => v.lang.startsWith('ko'));
+    if (ko) utt.voice = ko;
+  }
 
   utt.rate   = parseFloat(document.getElementById('affirmationRate')?.value  ?? 0.75);
   utt.pitch  = parseFloat(document.getElementById('affirmationPitch')?.value ?? 0.9);
@@ -1122,11 +1149,19 @@ function renderAffirmationItems() {
     el.innerHTML = '<p class="ms-empty">확언을 추가해보세요 🌱</p>';
     return;
   }
-  el.innerHTML = items.map((text, i) => `
+  el.innerHTML = items.map((item, i) => `
     <div class="affirmation-item">
-      <span class="affirmation-item-num">${i + 1}</span>
-      <span class="affirmation-item-text">${text}</span>
-      <button class="ms-delete" data-idx="${i}">삭제</button>
+      <div class="affirmation-item-top">
+        <span class="affirmation-item-num">${i + 1}</span>
+        <span class="affirmation-item-text">${item.text}</span>
+        <button class="ms-delete" data-idx="${i}">삭제</button>
+      </div>
+      <div class="affirmation-item-voice-row">
+        <span class="affirmation-voice-label">🗣️ 음성</span>
+        <select class="affirmation-select affirmation-item-voice" data-idx="${i}">
+          ${buildVoiceOptions(item.voiceName)}
+        </select>
+      </div>
     </div>`).join('');
 }
 
@@ -1138,7 +1173,7 @@ function showAffirmationView(view) {
 function updatePlayerDisplay() {
   const items = affState.items;
   const idx   = affState.currentIndex;
-  document.getElementById('affirmationPlayerText').textContent = items[idx] || '';
+  document.getElementById('affirmationPlayerText').textContent = items[idx]?.text || '';
   document.getElementById('affirmationProgressLabel').textContent = `${idx + 1} / ${items.length}`;
   document.getElementById('affirmationPauseBtn').textContent = affState.paused ? '▶' : '⏸';
 }
@@ -1220,7 +1255,7 @@ function closeAffirmation() {
 }
 
 // 확언 이벤트
-document.getElementById('affirmationBtn').addEventListener('click', openAffirmation);
+document.getElementById('affirmationFab').addEventListener('click', openAffirmation);
 document.getElementById('affirmationClose').addEventListener('click', closeAffirmation);
 document.getElementById('affirmationOverlay').addEventListener('click', e => {
   if (e.target === document.getElementById('affirmationOverlay')) closeAffirmation();
@@ -1228,10 +1263,11 @@ document.getElementById('affirmationOverlay').addEventListener('click', e => {
 
 document.getElementById('affirmationAddForm').addEventListener('submit', e => {
   e.preventDefault();
-  const text = document.getElementById('affirmationNewText').value.trim();
+  const text      = document.getElementById('affirmationNewText').value.trim();
+  const voiceName = document.getElementById('affirmationNewVoice').value;
   if (!text) return;
   const items = getAffirmations();
-  items.push(text);
+  items.push({ text, voiceName });
   saveAffirmations(items);
   document.getElementById('affirmationNewText').value = '';
   renderAffirmationItems();
@@ -1245,6 +1281,17 @@ document.getElementById('affirmationItems').addEventListener('click', e => {
   items.splice(parseInt(btn.dataset.idx, 10), 1);
   saveAffirmations(items);
   renderAffirmationItems();
+});
+
+document.getElementById('affirmationItems').addEventListener('change', e => {
+  const sel = e.target.closest('.affirmation-item-voice');
+  if (!sel) return;
+  const items = getAffirmations();
+  const idx = parseInt(sel.dataset.idx, 10);
+  if (items[idx]) {
+    items[idx].voiceName = sel.value;
+    saveAffirmations(items);
+  }
 });
 
 document.getElementById('affirmationPlay').addEventListener('click', startAffirmations);

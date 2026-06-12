@@ -1034,6 +1034,30 @@ input:focus {
 
 /* ── Tabata Timer ──────────────────────────────────────────────────────────── */
 
+.affirmation-fab {
+  position: fixed;
+  bottom: 96px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #7c3aed;
+  color: white;
+  font-size: 24px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(124,58,237,0.45);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.affirmation-fab:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 24px rgba(124,58,237,0.55);
+}
+
 .tabata-fab {
   position: fixed;
   bottom: 28px;
@@ -1272,12 +1296,28 @@ input:focus {
 
 .affirmation-item {
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
+  flex-direction: column;
   background: var(--card);
   border: 1.5px solid var(--border);
   border-radius: 10px;
   padding: 12px 14px;
+}
+
+.affirmation-item-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+}
+
+.affirmation-item-voice-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  width: 100%;
 }
 
 .affirmation-item-num {
