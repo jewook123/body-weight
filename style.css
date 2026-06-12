@@ -645,6 +645,8 @@ input:focus {
   display: flex;
 }
 
+#phrasesPanel { z-index: 170; }
+
 .ms-panel {
   background: var(--card);
   border-radius: var(--radius) var(--radius) 0 0;
