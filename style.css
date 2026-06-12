@@ -1309,6 +1309,54 @@ input:focus {
   gap: 10px;
 }
 
+/* 음성 설정 */
+.affirmation-voice-settings {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.affirmation-voice-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.affirmation-voice-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  width: 58px;
+  flex-shrink: 0;
+}
+
+.affirmation-select {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  min-width: 0;
+}
+.affirmation-select:focus { outline: none; border-color: var(--primary); }
+
+.affirmation-slider-val {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  width: 38px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
 .affirmation-textarea {
   width: 100%;
   padding: 12px 14px;
