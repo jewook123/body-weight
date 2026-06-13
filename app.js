@@ -1216,7 +1216,7 @@ function updatePlayerDisplay() {
   }
 
   document.getElementById('affirmationProgressLabel').textContent = `${idx + 1} / ${items.length}`;
-  document.getElementById('affirmationPauseBtn').textContent = affState.paused ? '▶' : '⏸';
+  document.getElementById('affirmationPauseBtn').textContent = affState.paused ? '▶' : '‖';
   updateMediaSession();
 }
 
@@ -1314,7 +1314,7 @@ function pauseResumeAffirmations() {
     speechSynthesis.resume();
     // resume이 안 될 경우 현재 항목부터 다시 재생
     if (!speechSynthesis.speaking) playNextAffirmation();
-    document.getElementById('affirmationPauseBtn').textContent = '⏸';
+    document.getElementById('affirmationPauseBtn').textContent = '‖';
   } else {
     affState.paused = true;
     clearTimeout(affState.pauseTimeout);
