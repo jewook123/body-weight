@@ -1379,6 +1379,46 @@ input:focus {
   color: var(--text);
 }
 
+.affirmation-bgm-row {
+  padding: 10px 14px;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+}
+
+/* 토글 스위치 */
+.affirmation-toggle {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.affirmation-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.affirmation-toggle-track {
+  position: absolute;
+  inset: 0;
+  background: var(--border);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 0.25s;
+}
+.affirmation-toggle-track::after {
+  content: '';
+  position: absolute;
+  left: 3px; top: 3px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.25s;
+}
+.affirmation-toggle input:checked + .affirmation-toggle-track {
+  background: var(--primary);
+}
+.affirmation-toggle input:checked + .affirmation-toggle-track::after {
+  transform: translateX(16px);
+}
+
 .affirmation-add-form {
   display: flex;
   flex-direction: column;

@@ -1281,6 +1281,10 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
+function isBgmEnabled() {
+  return document.getElementById('affirmationBgmEnabled')?.checked ?? true;
+}
+
 function startAffirmations() {
   const items = getAffirmations();
   if (!items.length) { showToast('확언을 먼저 추가해주세요!'); return; }
@@ -1289,8 +1293,10 @@ function startAffirmations() {
   affState.currentIndex = 0;
   affState.items        = [...items];
 
-  const vol = parseInt(document.getElementById('affirmationVolume').value, 10) / 100 * 0.6;
-  startHypnoticMusic(vol);
+  if (isBgmEnabled()) {
+    const vol = parseInt(document.getElementById('affirmationVolume').value, 10) / 100 * 0.6;
+    startHypnoticMusic(vol);
+  }
   startKeepalive();
   updateMediaSession();
   showAffirmationView('player');
@@ -1301,8 +1307,10 @@ function pauseResumeAffirmations() {
   if (!affState.playing) return;
   if (affState.paused) {
     affState.paused = false;
-    const vol = parseInt(document.getElementById('affirmationVolume').value, 10) / 100 * 0.6;
-    setHypnoVolume(vol);
+    if (isBgmEnabled()) {
+      const vol = parseInt(document.getElementById('affirmationVolume').value, 10) / 100 * 0.6;
+      setHypnoVolume(vol);
+    }
     speechSynthesis.resume();
     // resume이 안 될 경우 현재 항목부터 다시 재생
     if (!speechSynthesis.speaking) playNextAffirmation();
@@ -1406,8 +1414,23 @@ document.getElementById('affirmationStopBtn').addEventListener('click', stopAffi
 document.getElementById('affirmationSkipBtn').addEventListener('click', skipAffirmation);
 
 document.getElementById('affirmationVolume').addEventListener('input', e => {
+  document.getElementById('affirmationVolumeVal').textContent = `${e.target.value}%`;
+  if (!isBgmEnabled()) return;
   const vol = parseInt(e.target.value, 10) / 100 * 0.6;
   if (affState.playing && !affState.paused) setHypnoVolume(vol);
+});
+
+document.getElementById('affirmationBgmEnabled').addEventListener('change', e => {
+  const enabled = e.target.checked;
+  document.getElementById('affirmationVolume').disabled = !enabled;
+  document.getElementById('affirmationVolumeVal').style.opacity = enabled ? '' : '0.4';
+  if (!affState.playing) return;
+  if (enabled) {
+    const vol = parseInt(document.getElementById('affirmationVolume').value, 10) / 100 * 0.6;
+    startHypnoticMusic(vol);
+  } else {
+    stopHypnoticMusic();
+  }
 });
 
 document.getElementById('affirmationRate').addEventListener('input', e => {
