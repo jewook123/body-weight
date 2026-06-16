@@ -203,17 +203,22 @@
             <span class="affirmation-slider-val" id="affirmationSpeechVolVal">100%</span>
           </div>
         </div>
+        <div class="affirmation-voice-row affirmation-bgm-row">
+          <span class="affirmation-voice-label">🎵 배경음</span>
+          <label class="affirmation-toggle">
+            <input type="checkbox" id="affirmationBgmEnabled" checked>
+            <span class="affirmation-toggle-track"></span>
+          </label>
+          <input type="range" id="affirmationVolume" min="0" max="100" value="40" class="affirmation-volume-slider">
+          <span class="affirmation-slider-val" id="affirmationVolumeVal">40%</span>
+        </div>
         <button class="tabata-action-btn" id="affirmationPlay" style="margin-top:auto">▶ 재생</button>
       </div>
 
       <!-- 재생 화면 -->
       <div id="affirmationPlayer" class="affirmation-player-view" style="display:none">
-        <div class="affirmation-player-text" id="affirmationPlayerText"></div>
+        <div class="affirmation-player-list" id="affirmationPlayerList"></div>
         <div class="affirmation-progress-label" id="affirmationProgressLabel"></div>
-        <div class="affirmation-volume-row">
-          <span class="affirmation-volume-label">🎵 배경음</span>
-          <input type="range" id="affirmationVolume" min="0" max="100" value="40" class="affirmation-volume-slider">
-        </div>
         <div class="affirmation-controls">
           <button class="affirmation-ctrl-btn" id="affirmationStopBtn" title="정지">⏹</button>
           <button class="affirmation-ctrl-btn affirmation-ctrl-btn--main" id="affirmationPauseBtn" title="일시정지/재생">⏸</button>

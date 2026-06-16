@@ -1151,10 +1151,11 @@ function renderAffirmationItems() {
     return;
   }
   el.innerHTML = items.map((item, i) => `
-    <div class="affirmation-item">
+    <div class="affirmation-item" data-idx="${i}">
       <div class="affirmation-item-top">
         <span class="affirmation-item-num">${i + 1}</span>
         <span class="affirmation-item-text">${item.text}</span>
+        <button class="affirmation-edit-btn" data-idx="${i}" title="수정">✏️</button>
         <button class="ms-delete" data-idx="${i}">삭제</button>
       </div>
       <div class="affirmation-item-voice-row">
@@ -1166,6 +1167,37 @@ function renderAffirmationItems() {
     </div>`).join('');
 }
 
+function startEditAffirmation(idx) {
+  const items = getAffirmations();
+  const item = items[idx];
+  if (!item) return;
+  const el = document.querySelector(`.affirmation-item[data-idx="${idx}"]`);
+  if (!el) return;
+  const top = el.querySelector('.affirmation-item-top');
+  top.innerHTML = `
+    <span class="affirmation-item-num">${idx + 1}</span>
+    <textarea class="affirmation-textarea affirmation-edit-textarea" rows="3">${item.text}</textarea>
+    <button class="affirmation-edit-confirm-btn" data-idx="${idx}" title="저장">✓</button>
+    <button class="affirmation-edit-cancel-btn" data-idx="${idx}" title="취소">✕</button>
+  `;
+  top.querySelector('.affirmation-edit-textarea').focus();
+}
+
+function confirmEditAffirmation(idx) {
+  const el = document.querySelector(`.affirmation-item[data-idx="${idx}"]`);
+  if (!el) return;
+  const textarea = el.querySelector('.affirmation-edit-textarea');
+  const newText = textarea?.value.trim();
+  if (!newText) { showToast('내용을 입력해주세요'); return; }
+  const items = getAffirmations();
+  if (items[idx]) {
+    items[idx].text = newText;
+    saveAffirmations(items);
+    showToast('수정됐어요 ✨');
+  }
+  renderAffirmationItems();
+}
+
 function showAffirmationView(view) {
   document.getElementById('affirmationList').style.display   = view === 'list'   ? 'flex' : 'none';
   document.getElementById('affirmationPlayer').style.display = view === 'player' ? 'flex' : 'none';
@@ -1174,9 +1206,19 @@ function showAffirmationView(view) {
 function updatePlayerDisplay() {
   const items = affState.items;
   const idx   = affState.currentIndex;
-  document.getElementById('affirmationPlayerText').textContent = items[idx]?.text || '';
+
+  const list = document.getElementById('affirmationPlayerList');
+  if (list) {
+    list.innerHTML = items.map((item, i) =>
+      `<div class="affirmation-player-item${i === idx ? ' affirmation-player-item--active' : ''}" data-idx="${i}">${item.text || ''}</div>`
+    ).join('');
+    const active = list.querySelector('.affirmation-player-item--active');
+    if (active) active.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+
   document.getElementById('affirmationProgressLabel').textContent = `${idx + 1} / ${items.length}`;
   document.getElementById('affirmationPauseBtn').textContent = affState.paused ? '▶' : '⏸';
+  updateMediaSession();
 }
 
 function playNextAffirmation() {
@@ -1194,6 +1236,56 @@ function playNextAffirmation() {
   });
 }
 
+// 백그라운드 재생 유지: 무음 keepalive 오디오 (화면 꺼짐 시 오디오 포커스 유지)
+let _keepaliveSource = null;
+function startKeepalive() {
+  try {
+    const ctx = getAudioCtx();
+    if (_keepaliveSource) return;
+    const buf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    const g = ctx.createGain();
+    g.gain.value = 0.0001;
+    src.connect(g); g.connect(ctx.destination);
+    src.start();
+    _keepaliveSource = src;
+  } catch(_) {}
+}
+function stopKeepalive() {
+  try { _keepaliveSource?.stop(); } catch(_) {}
+  _keepaliveSource = null;
+}
+
+function updateMediaSession() {
+  if (!('mediaSession' in navigator)) return;
+  const item = affState.items[affState.currentIndex];
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: item?.text || '확언',
+    artist: `${affState.currentIndex + 1} / ${affState.items.length}`,
+    album: '긍정 확언',
+  });
+  navigator.mediaSession.playbackState = affState.paused ? 'paused' : 'playing';
+  navigator.mediaSession.setActionHandler('play',          () => { if (affState.paused) pauseResumeAffirmations(); });
+  navigator.mediaSession.setActionHandler('pause',         () => { if (!affState.paused) pauseResumeAffirmations(); });
+  navigator.mediaSession.setActionHandler('nexttrack',     () => skipAffirmation());
+  navigator.mediaSession.setActionHandler('stop',          () => stopAffirmations());
+}
+
+// 화면이 다시 켜졌을 때 TTS가 끊겼으면 재시작
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && affState.playing && !affState.paused) {
+    if (!speechSynthesis.speaking && !speechSynthesis.pending) {
+      playNextAffirmation();
+    }
+  }
+});
+
+function isBgmEnabled() {
+  return document.getElementById('affirmationBgmEnabled')?.checked ?? true;
+}
+
 function startAffirmations() {
   const items = getAffirmations();
   if (!items.length) { showToast('확언을 먼저 추가해주세요!'); return; }
@@ -1202,8 +1294,12 @@ function startAffirmations() {
   affState.currentIndex = 0;
   affState.items        = [...items];
 
-  const vol = parseInt(document.getElementById('affirmationVolume').value, 10) / 100 * 0.6;
-  startHypnoticMusic(vol);
+  if (isBgmEnabled()) {
+    const vol = parseInt(document.getElementById('affirmationVolume').value, 10) / 100 * 0.6;
+    startHypnoticMusic(vol);
+  }
+  startKeepalive();
+  updateMediaSession();
   showAffirmationView('player');
   playNextAffirmation();
 }
@@ -1212,8 +1308,10 @@ function pauseResumeAffirmations() {
   if (!affState.playing) return;
   if (affState.paused) {
     affState.paused = false;
-    const vol = parseInt(document.getElementById('affirmationVolume').value, 10) / 100 * 0.6;
-    setHypnoVolume(vol);
+    if (isBgmEnabled()) {
+      const vol = parseInt(document.getElementById('affirmationVolume').value, 10) / 100 * 0.6;
+      setHypnoVolume(vol);
+    }
     speechSynthesis.resume();
     // resume이 안 될 경우 현재 항목부터 다시 재생
     if (!speechSynthesis.speaking) playNextAffirmation();
@@ -1233,6 +1331,8 @@ function stopAffirmations() {
   clearTimeout(affState.pauseTimeout);
   speechSynthesis.cancel();
   stopHypnoticMusic();
+  stopKeepalive();
+  if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'none';
   showAffirmationView('list');
 }
 
@@ -1276,12 +1376,26 @@ document.getElementById('affirmationAddForm').addEventListener('submit', e => {
 });
 
 document.getElementById('affirmationItems').addEventListener('click', e => {
-  const btn = e.target.closest('.ms-delete');
-  if (!btn) return;
-  const items = getAffirmations();
-  items.splice(parseInt(btn.dataset.idx, 10), 1);
-  saveAffirmations(items);
-  renderAffirmationItems();
+  if (e.target.closest('.ms-delete')) {
+    const idx = parseInt(e.target.closest('.ms-delete').dataset.idx, 10);
+    const items = getAffirmations();
+    items.splice(idx, 1);
+    saveAffirmations(items);
+    renderAffirmationItems();
+    return;
+  }
+  if (e.target.closest('.affirmation-edit-btn')) {
+    startEditAffirmation(parseInt(e.target.closest('.affirmation-edit-btn').dataset.idx, 10));
+    return;
+  }
+  if (e.target.closest('.affirmation-edit-confirm-btn')) {
+    confirmEditAffirmation(parseInt(e.target.closest('.affirmation-edit-confirm-btn').dataset.idx, 10));
+    return;
+  }
+  if (e.target.closest('.affirmation-edit-cancel-btn')) {
+    renderAffirmationItems();
+    return;
+  }
 });
 
 document.getElementById('affirmationItems').addEventListener('change', e => {
@@ -1301,8 +1415,23 @@ document.getElementById('affirmationStopBtn').addEventListener('click', stopAffi
 document.getElementById('affirmationSkipBtn').addEventListener('click', skipAffirmation);
 
 document.getElementById('affirmationVolume').addEventListener('input', e => {
+  document.getElementById('affirmationVolumeVal').textContent = `${e.target.value}%`;
+  if (!isBgmEnabled()) return;
   const vol = parseInt(e.target.value, 10) / 100 * 0.6;
   if (affState.playing && !affState.paused) setHypnoVolume(vol);
+});
+
+document.getElementById('affirmationBgmEnabled').addEventListener('change', e => {
+  const enabled = e.target.checked;
+  document.getElementById('affirmationVolume').disabled = !enabled;
+  document.getElementById('affirmationVolumeVal').style.opacity = enabled ? '' : '0.4';
+  if (!affState.playing) return;
+  if (enabled) {
+    const vol = parseInt(document.getElementById('affirmationVolume').value, 10) / 100 * 0.6;
+    startHypnoticMusic(vol);
+  } else {
+    stopHypnoticMusic();
+  }
 });
 
 document.getElementById('affirmationRate').addEventListener('input', e => {
