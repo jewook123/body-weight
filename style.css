@@ -1082,6 +1082,293 @@ input:focus {
   box-shadow: 0 6px 24px rgba(59,130,246,0.55);
 }
 
+.diary-fab {
+  position: fixed;
+  bottom: 164px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #059669;
+  color: white;
+  font-size: 24px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(5,150,105,0.45);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.diary-fab:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 24px rgba(5,150,105,0.55);
+}
+
+/* ── Emotion Diary ─────────────────────────────────────────────────────────── */
+
+.diary-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 160;
+  flex-direction: column;
+  transition: background 0.4s;
+}
+.diary-overlay.open { display: flex; }
+
+.diary-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0 0 env(safe-area-inset-bottom);
+}
+
+.diary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.diary-header h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+.diary-header-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.diary-write-view {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.diary-write-date {
+  font-size: 0.9rem;
+  color: var(--text2);
+  font-weight: 600;
+}
+
+.diary-emotion-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.diary-emotion-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text2);
+}
+.diary-emotions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.emotion-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 10px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  cursor: pointer;
+  font-size: 22px;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+  min-width: 60px;
+}
+.emotion-btn span {
+  font-size: 10px;
+  color: var(--text2);
+  font-weight: 500;
+}
+.emotion-btn.selected {
+  border-color: #059669;
+  background: rgba(5,150,105,0.1);
+  transform: scale(1.05);
+}
+.emotion-btn:hover {
+  border-color: #059669;
+  background: rgba(5,150,105,0.07);
+}
+
+.diary-textarea {
+  flex: 1;
+  min-height: 160px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 0.95rem;
+  color: var(--text);
+  background: var(--card);
+  resize: none;
+  font-family: inherit;
+  line-height: 1.6;
+  transition: border-color 0.15s;
+}
+.diary-textarea:focus {
+  outline: none;
+  border-color: #059669;
+}
+
+.diary-write-actions {
+  display: flex;
+  gap: 10px;
+}
+.diary-cancel-btn {
+  flex: 1;
+  padding: 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--text2);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.diary-cancel-btn:hover { background: var(--border); }
+.diary-save-btn {
+  flex: 2;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: #059669;
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.diary-save-btn:hover { background: #047857; transform: scale(1.02); }
+
+.diary-list-view {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+}
+
+.diary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.diary-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--card);
+  border-radius: 14px;
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+}
+.diary-item:hover {
+  border-color: #059669;
+  transform: translateY(-1px);
+}
+.diary-item-emotion {
+  font-size: 28px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.diary-item-body {
+  flex: 1;
+  min-width: 0;
+}
+.diary-item-date {
+  font-size: 0.78rem;
+  color: var(--text2);
+  margin-bottom: 4px;
+}
+.diary-item-preview {
+  font-size: 0.9rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.diary-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text2);
+}
+.diary-empty-icon { font-size: 48px; margin-bottom: 12px; }
+.diary-empty p { line-height: 1.7; font-size: 0.9rem; }
+
+.diary-detail-view {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.diary-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.diary-back-btn {
+  background: none;
+  border: none;
+  color: #059669;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+}
+.diary-delete-btn {
+  background: none;
+  border: none;
+  color: var(--text2);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.15s, color 0.15s;
+}
+.diary-delete-btn:hover { background: #fee2e2; color: #dc2626; }
+.diary-detail-date {
+  font-size: 0.85rem;
+  color: var(--text2);
+  font-weight: 600;
+}
+.diary-detail-emotion {
+  font-size: 48px;
+  text-align: center;
+  padding: 8px 0;
+}
+.diary-detail-content {
+  font-size: 0.98rem;
+  color: var(--text);
+  line-height: 1.8;
+  white-space: pre-wrap;
+  background: var(--card);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1.5px solid var(--border);
+  min-height: 120px;
+}
+
 .tabata-overlay {
   display: none;
   position: fixed;

@@ -3,6 +3,7 @@ const GOAL_KEY = 'bodyweight_goal';
 const THEME_KEY = 'bodyweight_theme';
 const CHECKS_KEY = 'bodyweight_daily_checks';
 const MISSION_CFG_KEY = 'bodyweight_mission_cfg';
+const DIARY_KEY = 'bodyweight_diary';
 
 let currentPeriod = '3m';
 
@@ -1312,6 +1313,125 @@ document.getElementById('affirmationPitch').addEventListener('input', e => {
 });
 document.getElementById('affirmationSpeechVol').addEventListener('input', e => {
   document.getElementById('affirmationSpeechVolVal').textContent = e.target.value + '%';
+});
+
+// ── Emotion Diary ──────────────────────────────────────────────────────────
+
+function getDiaryEntries() {
+  try { return JSON.parse(localStorage.getItem(DIARY_KEY)) || []; } catch { return []; }
+}
+function saveDiaryEntries(entries) {
+  localStorage.setItem(DIARY_KEY, JSON.stringify(entries));
+}
+
+const diaryState = { selectedEmotion: '', editingId: null };
+
+function formatDiaryDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+}
+
+function openDiary() {
+  showDiaryList();
+  openOverlay('diaryOverlay');
+}
+
+function showDiaryList() {
+  document.getElementById('diaryWriteView').style.display = 'none';
+  document.getElementById('diaryDetailView').style.display = 'none';
+  document.getElementById('diaryListView').style.display = '';
+  renderDiaryList();
+}
+
+function showDiaryWrite(entry) {
+  diaryState.editingId = entry ? entry.id : null;
+  diaryState.selectedEmotion = entry ? entry.emotion : '';
+  document.getElementById('diaryListView').style.display = 'none';
+  document.getElementById('diaryDetailView').style.display = 'none';
+  document.getElementById('diaryWriteView').style.display = '';
+  document.getElementById('diaryWriteDate').textContent = formatDiaryDate(today());
+  document.getElementById('diaryContent').value = entry ? entry.content : '';
+  document.querySelectorAll('.emotion-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.emotion === diaryState.selectedEmotion);
+  });
+}
+
+function showDiaryDetail(entry) {
+  document.getElementById('diaryListView').style.display = 'none';
+  document.getElementById('diaryWriteView').style.display = 'none';
+  const view = document.getElementById('diaryDetailView');
+  view.style.display = '';
+  document.getElementById('diaryDetailDate').textContent = formatDiaryDate(entry.date);
+  document.getElementById('diaryDetailEmotion').textContent = entry.emotion || '📝';
+  document.getElementById('diaryDetailContent').textContent = entry.content;
+  view.dataset.entryId = entry.id;
+}
+
+function renderDiaryList() {
+  const entries = getDiaryEntries().sort((a, b) => b.date.localeCompare(a.date));
+  const list = document.getElementById('diaryList');
+  const empty = document.getElementById('diaryEmpty');
+  if (entries.length === 0) {
+    list.innerHTML = '';
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+  list.innerHTML = entries.map(e => `
+    <div class="diary-item" data-id="${e.id}">
+      <div class="diary-item-emotion">${e.emotion || '📝'}</div>
+      <div class="diary-item-body">
+        <div class="diary-item-date">${formatDiaryDate(e.date)}</div>
+        <div class="diary-item-preview">${e.content || '(내용 없음)'}</div>
+      </div>
+    </div>
+  `).join('');
+  list.querySelectorAll('.diary-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const entry = entries.find(e => e.id === el.dataset.id);
+      if (entry) showDiaryDetail(entry);
+    });
+  });
+}
+
+document.getElementById('diaryFab').addEventListener('click', openDiary);
+document.getElementById('diaryClose').addEventListener('click', () => closeOverlay('diaryOverlay'));
+document.getElementById('diaryNewBtn').addEventListener('click', () => showDiaryWrite(null));
+document.getElementById('diaryCancelBtn').addEventListener('click', showDiaryList);
+
+document.querySelectorAll('.emotion-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    diaryState.selectedEmotion = btn.dataset.emotion;
+    document.querySelectorAll('.emotion-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  });
+});
+
+document.getElementById('diarySaveBtn').addEventListener('click', () => {
+  const content = document.getElementById('diaryContent').value.trim();
+  if (!content && !diaryState.selectedEmotion) return;
+  const entries = getDiaryEntries();
+  if (diaryState.editingId) {
+    const idx = entries.findIndex(e => e.id === diaryState.editingId);
+    if (idx !== -1) {
+      entries[idx].emotion = diaryState.selectedEmotion;
+      entries[idx].content = content;
+    }
+  } else {
+    entries.push({ id: Date.now().toString(), date: today(), emotion: diaryState.selectedEmotion, content });
+  }
+  saveDiaryEntries(entries);
+  showDiaryList();
+});
+
+document.getElementById('diaryBackBtn').addEventListener('click', showDiaryList);
+
+document.getElementById('diaryDeleteBtn').addEventListener('click', () => {
+  const id = document.getElementById('diaryDetailView').dataset.entryId;
+  if (!id) return;
+  if (!confirm('이 일기를 삭제할까요?')) return;
+  saveDiaryEntries(getDiaryEntries().filter(e => e.id !== id));
+  showDiaryList();
 });
 
 // Init
