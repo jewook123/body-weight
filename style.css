@@ -1508,7 +1508,6 @@ input:focus {
 .tabata-phase-label.phase-rest     { color: var(--primary); }
 .tabata-phase-label.phase-warmup   { color: #f97316; }
 .tabata-phase-label.phase-cooldown { color: #a855f7; }
-.tabata-phase-label.phase-set-rest { color: #06b6d4; }
 
 .tabata-round-label {
   font-size: 16px;
@@ -1530,7 +1529,6 @@ input:focus {
 .tabata-time-display.phase-rest     { color: var(--primary); }
 .tabata-time-display.phase-warmup   { color: #f97316; }
 .tabata-time-display.phase-cooldown { color: #a855f7; }
-.tabata-time-display.phase-set-rest { color: #06b6d4; }
 
 .tabata-timer-controls {
   display: flex;
@@ -1557,6 +1555,27 @@ input:focus {
   color: var(--text);
 }
 .tabata-ctrl-btn--secondary:hover { background: var(--text-secondary); color: white; }
+
+.tabata-add-time-row {
+  margin-top: 12px;
+}
+.tabata-add-time-btn {
+  padding: 10px 28px;
+  border-radius: 20px;
+  border: 2px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s, color 0.15s;
+  letter-spacing: 0.5px;
+}
+.tabata-add-time-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
 
 /* Done */
 .tabata-done {

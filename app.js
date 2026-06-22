@@ -787,10 +787,10 @@ function closePhrasesPanel() {
 
 // State
 const tabata = {
-  phase: 'idle', // idle | warmup | prepare | exercise | rest | setRest | cooldown | done
+  phase: 'idle', // idle | warmup | prepare | exercise | rest | cooldown | done
   round: 1,
   timeLeft: 3,
-  settings: { exTime: 40, restTime: 10, rounds: 8, warmupTime: 0, cooldownTime: 0, setSize: 4, setRestTime: 0 },
+  settings: { exTime: 40, restTime: 10, rounds: 8, warmupTime: 0, cooldownTime: 0 },
   paused: false,
   intervalId: null,
 };
@@ -804,14 +804,12 @@ function saveTabataSettings() {
 
 function openTabata() {
   const saved = loadTabataSettings();
-  tabata.settings = { exTime: 40, restTime: 10, rounds: 8, warmupTime: 0, cooldownTime: 0, setSize: 4, setRestTime: 0, ...saved };
-  document.getElementById('exTimeSec').textContent      = tabata.settings.exTime;
-  document.getElementById('restTimeSec').textContent    = tabata.settings.restTime;
-  document.getElementById('roundCount').textContent     = tabata.settings.rounds;
-  document.getElementById('warmupTimeSec').textContent  = tabata.settings.warmupTime;
+  tabata.settings = { exTime: 40, restTime: 10, rounds: 8, warmupTime: 0, cooldownTime: 0, ...saved };
+  document.getElementById('exTimeSec').textContent       = tabata.settings.exTime;
+  document.getElementById('restTimeSec').textContent     = tabata.settings.restTime;
+  document.getElementById('roundCount').textContent      = tabata.settings.rounds;
+  document.getElementById('warmupTimeSec').textContent   = tabata.settings.warmupTime;
   document.getElementById('cooldownTimeSec').textContent = tabata.settings.cooldownTime;
-  document.getElementById('setSizeCount').textContent   = tabata.settings.setSize;
-  document.getElementById('setRestTimeSec').textContent = tabata.settings.setRestTime;
   showTabataView('idle');
   openOverlay('tabataOverlay');
 }
@@ -888,23 +886,11 @@ function tickTabata() {
           return;
         }
       } else {
-        const setBreakDue = settings.setRestTime > 0 && settings.setSize > 0 && tabata.round % settings.setSize === 0;
-        if (setBreakDue) {
-          tabata.phase    = 'setRest';
-          tabata.timeLeft = settings.setRestTime;
-          soundSetRest();
-        } else {
-          tabata.phase    = 'rest';
-          tabata.timeLeft = settings.restTime;
-          soundRest();
-        }
+        tabata.phase    = 'rest';
+        tabata.timeLeft = settings.restTime;
+        soundRest();
       }
     } else if (tabata.phase === 'rest') {
-      tabata.round++;
-      tabata.phase    = 'exercise';
-      tabata.timeLeft = settings.exTime;
-      soundExercise();
-    } else if (tabata.phase === 'setRest') {
       tabata.round++;
       tabata.phase    = 'exercise';
       tabata.timeLeft = settings.exTime;
@@ -923,16 +909,15 @@ function updateTabataDisplay() {
   const roundEl = document.getElementById('tabataRoundLabel');
   const timeEl  = document.getElementById('tabataTimeDisplay');
 
-  const labels  = { prepare: '준비', exercise: '운동', rest: '휴식', warmup: '웜업', cooldown: '쿨다운', setRest: '세트 휴식' };
-  const classes = { prepare: 'phase-prepare', exercise: 'phase-exercise', rest: 'phase-rest', warmup: 'phase-warmup', cooldown: 'phase-cooldown', setRest: 'phase-set-rest' };
-  const bgLight = { exercise: '#f0fdf4', rest: '#eff6ff', prepare: '', warmup: '#fff7ed', cooldown: '#faf5ff', setRest: '#ecfeff' };
-  const bgDark  = { exercise: '#052e16', rest: '#0c1a3a', prepare: '', warmup: '#431407', cooldown: '#1e1b4b', setRest: '#083344' };
+  const labels  = { prepare: '준비', exercise: '운동', rest: '휴식', warmup: '웜업', cooldown: '쿨다운' };
+  const classes = { prepare: 'phase-prepare', exercise: 'phase-exercise', rest: 'phase-rest', warmup: 'phase-warmup', cooldown: 'phase-cooldown' };
+  const bgLight = { exercise: '#f0fdf4', rest: '#eff6ff', prepare: '', warmup: '#fff7ed', cooldown: '#faf5ff' };
+  const bgDark  = { exercise: '#052e16', rest: '#0c1a3a', prepare: '', warmup: '#431407', cooldown: '#1e1b4b' };
 
   const roundText = {
     prepare: '시작 준비',
     warmup: '웜업 중',
     cooldown: '쿨다운 중',
-    setRest: `세트 ${Math.ceil(round / settings.setSize)} 완료`,
   };
 
   phaseEl.textContent = labels[phase] || '';
@@ -961,8 +946,6 @@ makeStepper('restDec',    'restInc',    'restTime',    'restTimeSec',     5, 5, 
 makeStepper('roundDec',   'roundInc',   'rounds',      'roundCount',      1, 1,  99);
 makeStepper('warmupDec',  'warmupInc',  'warmupTime',  'warmupTimeSec',   5, 0,  300);
 makeStepper('cooldownDec','cooldownInc','cooldownTime','cooldownTimeSec', 5, 0,  300);
-makeStepper('setSizeDec', 'setSizeInc', 'setSize',     'setSizeCount',    1, 1,  99);
-makeStepper('setRestDec', 'setRestInc', 'setRestTime', 'setRestTimeSec',  5, 0,  300);
 
 document.getElementById('tabataFab').addEventListener('click', openTabata);
 document.getElementById('tabataClose').addEventListener('click', closeTabata);
@@ -985,6 +968,11 @@ document.getElementById('tabataReset').addEventListener('click', () => {
   stopTabataTimer();
   document.getElementById('tabataOverlay').style.background = '';
   showTabataView('idle');
+});
+document.getElementById('tabataAddTime').addEventListener('click', () => {
+  if (tabata.phase === 'prepare' || tabata.phase === 'idle' || tabata.phase === 'done') return;
+  tabata.timeLeft += 30;
+  updateTabataDisplay();
 });
 
 // Phrases panel events
