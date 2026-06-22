@@ -182,15 +182,19 @@
 
       <!-- 설정 화면 -->
       <div id="tabataIdle" class="tabata-idle">
-        <div class="tabata-settings">
+        <!-- 웜업 -->
+        <div class="tabata-settings tabata-settings--warmup">
           <div class="tabata-setting-row">
-            <span class="tabata-setting-label">웜업 시간</span>
+            <span class="tabata-setting-label tabata-setting-label--warmup">웜업 시간</span>
             <div class="tabata-stepper">
               <button class="stepper-btn" id="warmupDec">−</button>
               <span class="stepper-val"><span id="warmupTimeSec">0</span><span class="stepper-unit">초</span></span>
               <button class="stepper-btn" id="warmupInc">+</button>
             </div>
           </div>
+        </div>
+        <!-- 타바타 -->
+        <div class="tabata-settings">
           <div class="tabata-setting-row">
             <span class="tabata-setting-label">운동 시간</span>
             <div class="tabata-stepper">
@@ -215,8 +219,11 @@
               <button class="stepper-btn" id="roundInc">+</button>
             </div>
           </div>
-          <div class="tabata-setting-row tabata-setting-row--divider">
-            <span class="tabata-setting-label">쿨다운 시간</span>
+        </div>
+        <!-- 쿨다운 -->
+        <div class="tabata-settings tabata-settings--cooldown">
+          <div class="tabata-setting-row">
+            <span class="tabata-setting-label tabata-setting-label--cooldown">쿨다운 시간</span>
             <div class="tabata-stepper">
               <button class="stepper-btn" id="cooldownDec">−</button>
               <span class="stepper-val"><span id="cooldownTimeSec">0</span><span class="stepper-unit">초</span></span>

@@ -1117,7 +1117,12 @@ input:focus {
   border-bottom: 1px solid var(--border);
 }
 .tabata-setting-row:last-child { border-bottom: none; }
-.tabata-setting-row--divider { border-top: 2px solid var(--border); }
+
+.tabata-settings--warmup   { border-color: #fca5a5; }
+.tabata-settings--cooldown { border-color: #93c5fd; }
+
+.tabata-setting-label--warmup   { color: #dc2626; }
+.tabata-setting-label--cooldown { color: #2563eb; }
 
 .tabata-setting-label {
   font-size: 16px;
