@@ -733,6 +733,9 @@ function soundTick()     { bellStrike(1100, 0.06, 0.35); }
 function soundExercise() { bellStrike(650, 1.8, 0.6); }
 function soundRest()     { bellStrike(500, 1.5, 0.45); setTimeout(() => bellStrike(500, 1.5, 0.35), 400); }
 function soundDone()     { [0, 180, 360, 540].forEach(t => setTimeout(() => bellStrike(580, 1.2, 0.5), t)); }
+function soundWarmup()   { bellStrike(750, 2.0, 0.5); setTimeout(() => bellStrike(820, 1.8, 0.4), 500); }
+function soundCooldown() { bellStrike(600, 2.0, 0.45); setTimeout(() => bellStrike(520, 2.0, 0.35), 600); }
+function soundSetRest()  { bellStrike(450, 1.8, 0.5); setTimeout(() => bellStrike(450, 1.5, 0.4), 450); setTimeout(() => bellStrike(450, 1.2, 0.3), 900); }
 
 const DEFAULT_PHRASES = [
   "Good boy~",
@@ -784,10 +787,10 @@ function closePhrasesPanel() {
 
 // State
 const tabata = {
-  phase: 'idle', // idle | prepare | exercise | rest | done
+  phase: 'idle', // idle | warmup | prepare | exercise | rest | setRest | cooldown | done
   round: 1,
   timeLeft: 3,
-  settings: { exTime: 40, restTime: 10, rounds: 8 },
+  settings: { exTime: 40, restTime: 10, rounds: 8, warmupTime: 0, cooldownTime: 0, setSize: 4, setRestTime: 0 },
   paused: false,
   intervalId: null,
 };
@@ -801,10 +804,14 @@ function saveTabataSettings() {
 
 function openTabata() {
   const saved = loadTabataSettings();
-  tabata.settings = { exTime: 40, restTime: 10, rounds: 8, ...saved };
-  document.getElementById('exTimeSec').textContent   = tabata.settings.exTime;
-  document.getElementById('restTimeSec').textContent = tabata.settings.restTime;
-  document.getElementById('roundCount').textContent  = tabata.settings.rounds;
+  tabata.settings = { exTime: 40, restTime: 10, rounds: 8, warmupTime: 0, cooldownTime: 0, setSize: 4, setRestTime: 0, ...saved };
+  document.getElementById('exTimeSec').textContent      = tabata.settings.exTime;
+  document.getElementById('restTimeSec').textContent    = tabata.settings.restTime;
+  document.getElementById('roundCount').textContent     = tabata.settings.rounds;
+  document.getElementById('warmupTimeSec').textContent  = tabata.settings.warmupTime;
+  document.getElementById('cooldownTimeSec').textContent = tabata.settings.cooldownTime;
+  document.getElementById('setSizeCount').textContent   = tabata.settings.setSize;
+  document.getElementById('setRestTimeSec').textContent = tabata.settings.setRestTime;
   showTabataView('idle');
   openOverlay('tabataOverlay');
 }
@@ -821,19 +828,36 @@ function showTabataView(view) {
 }
 
 function startTabataTimer() {
-  tabata.phase    = 'prepare';
-  tabata.round    = 1;
-  tabata.timeLeft = 3;
-  tabata.paused   = false;
+  tabata.round  = 1;
+  tabata.paused = false;
   document.getElementById('tabataPause').textContent = '일시정지';
+  if (tabata.settings.warmupTime > 0) {
+    tabata.phase    = 'warmup';
+    tabata.timeLeft = tabata.settings.warmupTime;
+    soundWarmup();
+  } else {
+    tabata.phase    = 'prepare';
+    tabata.timeLeft = 3;
+    soundTick();
+  }
   showTabataView('running');
   updateTabataDisplay();
-  soundTick();
   tabata.intervalId = setInterval(tickTabata, 1000);
 }
 function stopTabataTimer() {
   clearInterval(tabata.intervalId);
   tabata.intervalId = null;
+}
+
+function finishTabata() {
+  stopTabataTimer();
+  tabata.phase = 'done';
+  soundDone();
+  setTimeout(speakDone, 700);
+  document.getElementById('tabataDoneSub').textContent =
+    `${tabata.settings.rounds}라운드 모두 완료했어요 💪`;
+  showTabataView('done');
+  document.getElementById('tabataOverlay').style.background = '';
 }
 
 function tickTabata() {
@@ -843,30 +867,51 @@ function tickTabata() {
   if (tabata.timeLeft > 0 && tabata.timeLeft <= 3) soundTick();
 
   if (tabata.timeLeft <= 0) {
-    if (tabata.phase === 'prepare') {
+    const { settings } = tabata;
+
+    if (tabata.phase === 'warmup') {
+      tabata.phase    = 'prepare';
+      tabata.timeLeft = 3;
+      soundTick();
+    } else if (tabata.phase === 'prepare') {
       tabata.phase    = 'exercise';
-      tabata.timeLeft = tabata.settings.exTime;
+      tabata.timeLeft = settings.exTime;
       soundExercise();
     } else if (tabata.phase === 'exercise') {
-      if (tabata.round >= tabata.settings.rounds) {
-        stopTabataTimer();
-        tabata.phase = 'done';
-        soundDone();
-        setTimeout(speakDone, 700);
-        document.getElementById('tabataDoneSub').textContent =
-          `${tabata.settings.rounds}라운드 모두 완료했어요 💪`;
-        showTabataView('done');
-        document.getElementById('tabataOverlay').style.background = '';
-        return;
+      if (tabata.round >= settings.rounds) {
+        if (settings.cooldownTime > 0) {
+          tabata.phase    = 'cooldown';
+          tabata.timeLeft = settings.cooldownTime;
+          soundCooldown();
+        } else {
+          finishTabata();
+          return;
+        }
+      } else {
+        const setBreakDue = settings.setRestTime > 0 && settings.setSize > 0 && tabata.round % settings.setSize === 0;
+        if (setBreakDue) {
+          tabata.phase    = 'setRest';
+          tabata.timeLeft = settings.setRestTime;
+          soundSetRest();
+        } else {
+          tabata.phase    = 'rest';
+          tabata.timeLeft = settings.restTime;
+          soundRest();
+        }
       }
-      tabata.phase    = 'rest';
-      tabata.timeLeft = tabata.settings.restTime;
-      soundRest();
     } else if (tabata.phase === 'rest') {
       tabata.round++;
       tabata.phase    = 'exercise';
-      tabata.timeLeft = tabata.settings.exTime;
+      tabata.timeLeft = settings.exTime;
       soundExercise();
+    } else if (tabata.phase === 'setRest') {
+      tabata.round++;
+      tabata.phase    = 'exercise';
+      tabata.timeLeft = settings.exTime;
+      soundExercise();
+    } else if (tabata.phase === 'cooldown') {
+      finishTabata();
+      return;
     }
   }
   updateTabataDisplay();
@@ -878,14 +923,21 @@ function updateTabataDisplay() {
   const roundEl = document.getElementById('tabataRoundLabel');
   const timeEl  = document.getElementById('tabataTimeDisplay');
 
-  const labels  = { prepare: '준비', exercise: '운동', rest: '휴식' };
-  const classes = { prepare: 'phase-prepare', exercise: 'phase-exercise', rest: 'phase-rest' };
-  const bgLight = { exercise: '#f0fdf4', rest: '#eff6ff', prepare: '' };
-  const bgDark  = { exercise: '#052e16', rest: '#0c1a3a', prepare: '' };
+  const labels  = { prepare: '준비', exercise: '운동', rest: '휴식', warmup: '웜업', cooldown: '쿨다운', setRest: '세트 휴식' };
+  const classes = { prepare: 'phase-prepare', exercise: 'phase-exercise', rest: 'phase-rest', warmup: 'phase-warmup', cooldown: 'phase-cooldown', setRest: 'phase-set-rest' };
+  const bgLight = { exercise: '#f0fdf4', rest: '#eff6ff', prepare: '', warmup: '#fff7ed', cooldown: '#faf5ff', setRest: '#ecfeff' };
+  const bgDark  = { exercise: '#052e16', rest: '#0c1a3a', prepare: '', warmup: '#431407', cooldown: '#1e1b4b', setRest: '#083344' };
+
+  const roundText = {
+    prepare: '시작 준비',
+    warmup: '웜업 중',
+    cooldown: '쿨다운 중',
+    setRest: `세트 ${Math.ceil(round / settings.setSize)} 완료`,
+  };
 
   phaseEl.textContent = labels[phase] || '';
   phaseEl.className   = `tabata-phase-label ${classes[phase] || ''}`;
-  roundEl.textContent = phase === 'prepare' ? '시작 준비' : `${round} / ${settings.rounds}`;
+  roundEl.textContent = roundText[phase] || `${round} / ${settings.rounds}`;
   timeEl.textContent  = timeLeft;
   timeEl.className    = `tabata-time-display ${classes[phase] || ''}`;
 
@@ -904,9 +956,13 @@ function makeStepper(decId, incId, key, displayId, step, min, max) {
     document.getElementById(displayId).textContent = tabata.settings[key];
   });
 }
-makeStepper('exDec',   'exInc',   'exTime',   'exTimeSec',   5, 5,  300);
-makeStepper('restDec', 'restInc', 'restTime', 'restTimeSec', 5, 5,  300);
-makeStepper('roundDec','roundInc','rounds',   'roundCount',  1, 1,  99);
+makeStepper('exDec',      'exInc',      'exTime',      'exTimeSec',       5, 5,  300);
+makeStepper('restDec',    'restInc',    'restTime',    'restTimeSec',     5, 5,  300);
+makeStepper('roundDec',   'roundInc',   'rounds',      'roundCount',      1, 1,  99);
+makeStepper('warmupDec',  'warmupInc',  'warmupTime',  'warmupTimeSec',   5, 0,  300);
+makeStepper('cooldownDec','cooldownInc','cooldownTime','cooldownTimeSec', 5, 0,  300);
+makeStepper('setSizeDec', 'setSizeInc', 'setSize',     'setSizeCount',    1, 1,  99);
+makeStepper('setRestDec', 'setRestInc', 'setRestTime', 'setRestTimeSec',  5, 0,  300);
 
 document.getElementById('tabataFab').addEventListener('click', openTabata);
 document.getElementById('tabataClose').addEventListener('click', closeTabata);
