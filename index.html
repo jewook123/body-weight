@@ -184,6 +184,14 @@
       <div id="tabataIdle" class="tabata-idle">
         <div class="tabata-settings">
           <div class="tabata-setting-row">
+            <span class="tabata-setting-label">웜업 시간</span>
+            <div class="tabata-stepper">
+              <button class="stepper-btn" id="warmupDec">−</button>
+              <span class="stepper-val"><span id="warmupTimeSec">0</span><span class="stepper-unit">초</span></span>
+              <button class="stepper-btn" id="warmupInc">+</button>
+            </div>
+          </div>
+          <div class="tabata-setting-row">
             <span class="tabata-setting-label">운동 시간</span>
             <div class="tabata-stepper">
               <button class="stepper-btn" id="exDec">−</button>
@@ -205,6 +213,30 @@
               <button class="stepper-btn" id="roundDec">−</button>
               <span class="stepper-val"><span id="roundCount">8</span><span class="stepper-unit">회</span></span>
               <button class="stepper-btn" id="roundInc">+</button>
+            </div>
+          </div>
+          <div class="tabata-setting-row tabata-setting-row--divider">
+            <span class="tabata-setting-label">세트 크기</span>
+            <div class="tabata-stepper">
+              <button class="stepper-btn" id="setSizeDec">−</button>
+              <span class="stepper-val"><span id="setSizeCount">4</span><span class="stepper-unit">회</span></span>
+              <button class="stepper-btn" id="setSizeInc">+</button>
+            </div>
+          </div>
+          <div class="tabata-setting-row">
+            <span class="tabata-setting-label">세트 간 휴식</span>
+            <div class="tabata-stepper">
+              <button class="stepper-btn" id="setRestDec">−</button>
+              <span class="stepper-val"><span id="setRestTimeSec">0</span><span class="stepper-unit">초</span></span>
+              <button class="stepper-btn" id="setRestInc">+</button>
+            </div>
+          </div>
+          <div class="tabata-setting-row tabata-setting-row--divider">
+            <span class="tabata-setting-label">쿨다운 시간</span>
+            <div class="tabata-stepper">
+              <button class="stepper-btn" id="cooldownDec">−</button>
+              <span class="stepper-val"><span id="cooldownTimeSec">0</span><span class="stepper-unit">초</span></span>
+              <button class="stepper-btn" id="cooldownInc">+</button>
             </div>
           </div>
         </div>
