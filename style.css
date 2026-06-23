@@ -1336,6 +1336,17 @@ input:focus {
   cursor: pointer;
   padding: 4px 0;
 }
+.diary-edit-btn {
+  background: none;
+  border: none;
+  color: var(--text2);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.15s, color 0.15s;
+}
+.diary-edit-btn:hover { background: #dbeafe; color: #2563eb; }
 .diary-delete-btn {
   background: none;
   border: none;
