@@ -310,9 +310,12 @@
         <div class="tabata-settings tabata-settings--warmup">
           <div class="tabata-setting-row">
             <span class="tabata-setting-label tabata-setting-label--warmup">웜업 시간</span>
+            <button class="tabata-toggle-btn" id="warmupToggle">OFF</button>
+          </div>
+          <div class="tabata-setting-row tabata-stepper-row" id="warmupStepperRow" style="display:none">
             <div class="tabata-stepper">
               <button class="stepper-btn" id="warmupDec">−</button>
-              <span class="stepper-val"><span id="warmupTimeSec">0</span><span class="stepper-unit">초</span></span>
+              <span class="stepper-val"><span id="warmupTimeSec">60</span><span class="stepper-unit">초</span></span>
               <button class="stepper-btn" id="warmupInc">+</button>
             </div>
           </div>
@@ -348,11 +351,27 @@
         <div class="tabata-settings tabata-settings--cooldown">
           <div class="tabata-setting-row">
             <span class="tabata-setting-label tabata-setting-label--cooldown">쿨다운 시간</span>
+            <button class="tabata-toggle-btn" id="cooldownToggle">OFF</button>
+          </div>
+          <div class="tabata-setting-row tabata-stepper-row" id="cooldownStepperRow" style="display:none">
             <div class="tabata-stepper">
               <button class="stepper-btn" id="cooldownDec">−</button>
-              <span class="stepper-val"><span id="cooldownTimeSec">0</span><span class="stepper-unit">초</span></span>
+              <span class="stepper-val"><span id="cooldownTimeSec">60</span><span class="stepper-unit">초</span></span>
               <button class="stepper-btn" id="cooldownInc">+</button>
             </div>
+          </div>
+        </div>
+        <!-- 프리셋 -->
+        <div class="tabata-presets-section">
+          <div class="tabata-presets-header">
+            <span class="tabata-presets-title">프리셋</span>
+            <button class="preset-save-btn" id="tabataPresetSaveBtn">+ 저장</button>
+          </div>
+          <div class="tabata-presets-row" id="tabataPresetsList"></div>
+          <div class="preset-name-form" id="presetNameForm" style="display:none">
+            <input class="preset-name-input" type="text" id="presetNameInput" placeholder="프리셋 이름" maxlength="14" />
+            <button class="preset-name-confirm" id="presetNameConfirm">저장</button>
+            <button class="preset-name-cancel" id="presetNameCancel">취소</button>
           </div>
         </div>
         <button class="tabata-action-btn" id="tabataStart">시작</button>
