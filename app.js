@@ -930,21 +930,23 @@ function updateTabataDisplay() {
 }
 
 // Stepper helper
-function makeStepper(decId, incId, key, displayId, step, min, max) {
-  document.getElementById(decId).addEventListener('click', () => {
-    tabata.settings[key] = Math.max(min, tabata.settings[key] - step);
+function makeStepper(decId, incId, key, displayId, step, min, max, bigDecId, bigIncId, bigStep) {
+  function update(delta) {
+    tabata.settings[key] = Math.min(max, Math.max(min, tabata.settings[key] + delta));
     document.getElementById(displayId).textContent = tabata.settings[key];
-  });
-  document.getElementById(incId).addEventListener('click', () => {
-    tabata.settings[key] = Math.min(max, tabata.settings[key] + step);
-    document.getElementById(displayId).textContent = tabata.settings[key];
-  });
+  }
+  document.getElementById(decId).addEventListener('click', () => update(-step));
+  document.getElementById(incId).addEventListener('click', () => update(step));
+  if (bigDecId && bigIncId && bigStep) {
+    document.getElementById(bigDecId).addEventListener('click', () => update(-bigStep));
+    document.getElementById(bigIncId).addEventListener('click', () => update(bigStep));
+  }
 }
-makeStepper('exDec',      'exInc',      'exTime',      'exTimeSec',       5, 5,  300);
-makeStepper('restDec',    'restInc',    'restTime',    'restTimeSec',     5, 5,  300);
-makeStepper('roundDec',   'roundInc',   'rounds',      'roundCount',      1, 1,  99);
-makeStepper('warmupDec',  'warmupInc',  'warmupTime',  'warmupTimeSec',   5, 0,  300);
-makeStepper('cooldownDec','cooldownInc','cooldownTime','cooldownTimeSec', 5, 0,  300);
+makeStepper('exDec',       'exInc',       'exTime',      'exTimeSec',       15, 15, 300);
+makeStepper('restDec',     'restInc',     'restTime',    'restTimeSec',     15, 15, 300);
+makeStepper('roundDec',    'roundInc',    'rounds',      'roundCount',       1,  1,  99);
+makeStepper('warmupDec',   'warmupInc',   'warmupTime',  'warmupTimeSec',   30,  0, 300, 'warmupDecBig',   'warmupIncBig',   60);
+makeStepper('cooldownDec', 'cooldownInc', 'cooldownTime','cooldownTimeSec', 30,  0, 300, 'cooldownDecBig', 'cooldownIncBig', 60);
 
 document.getElementById('tabataFab').addEventListener('click', openTabata);
 document.getElementById('tabataClose').addEventListener('click', closeTabata);
