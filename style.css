@@ -1124,6 +1124,29 @@ input:focus {
 .tabata-setting-label--warmup   { color: #dc2626; }
 .tabata-setting-label--cooldown { color: #2563eb; }
 
+.tabata-toggle-btn {
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  background: var(--border);
+  color: var(--text-secondary);
+  transition: background 0.2s, color 0.2s;
+  letter-spacing: 0.5px;
+}
+.tabata-toggle-btn.on {
+  background: var(--primary);
+  color: white;
+}
+.tabata-stepper-row {
+  border-top: 1px solid var(--border);
+  justify-content: center;
+  padding: 14px 20px;
+}
+
 .tabata-setting-label {
   font-size: 16px;
   font-weight: 600;

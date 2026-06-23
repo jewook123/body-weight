@@ -186,9 +186,12 @@
         <div class="tabata-settings tabata-settings--warmup">
           <div class="tabata-setting-row">
             <span class="tabata-setting-label tabata-setting-label--warmup">웜업 시간</span>
+            <button class="tabata-toggle-btn" id="warmupToggle">OFF</button>
+          </div>
+          <div class="tabata-setting-row tabata-stepper-row" id="warmupStepperRow" style="display:none">
             <div class="tabata-stepper">
               <button class="stepper-btn" id="warmupDec">−</button>
-              <span class="stepper-val"><span id="warmupTimeSec">0</span><span class="stepper-unit">초</span></span>
+              <span class="stepper-val"><span id="warmupTimeSec">60</span><span class="stepper-unit">초</span></span>
               <button class="stepper-btn" id="warmupInc">+</button>
             </div>
           </div>
@@ -224,9 +227,12 @@
         <div class="tabata-settings tabata-settings--cooldown">
           <div class="tabata-setting-row">
             <span class="tabata-setting-label tabata-setting-label--cooldown">쿨다운 시간</span>
+            <button class="tabata-toggle-btn" id="cooldownToggle">OFF</button>
+          </div>
+          <div class="tabata-setting-row tabata-stepper-row" id="cooldownStepperRow" style="display:none">
             <div class="tabata-stepper">
               <button class="stepper-btn" id="cooldownDec">−</button>
-              <span class="stepper-val"><span id="cooldownTimeSec">0</span><span class="stepper-unit">초</span></span>
+              <span class="stepper-val"><span id="cooldownTimeSec">60</span><span class="stepper-unit">초</span></span>
               <button class="stepper-btn" id="cooldownInc">+</button>
             </div>
           </div>

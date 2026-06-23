@@ -831,7 +831,7 @@ const tabata = {
   phase: 'idle', // idle | warmup | prepare | exercise | rest | cooldown | done
   round: 1,
   timeLeft: 3,
-  settings: { exTime: 40, restTime: 10, rounds: 8, warmupTime: 0, cooldownTime: 0 },
+  settings: { exTime: 40, restTime: 10, rounds: 8, warmupTime: 60, cooldownTime: 60, warmupEnabled: false, cooldownEnabled: false },
   paused: false,
   intervalId: null,
 };
@@ -843,10 +843,20 @@ function saveTabataSettings() {
   localStorage.setItem(TABATA_KEY, JSON.stringify(tabata.settings));
 }
 
+function applyToggleUI(enabledKey, stepperRowId, btnId) {
+  const isOn = tabata.settings[enabledKey];
+  const btn = document.getElementById(btnId);
+  btn.textContent = isOn ? 'ON' : 'OFF';
+  btn.classList.toggle('on', isOn);
+  document.getElementById(stepperRowId).style.display = isOn ? '' : 'none';
+}
+
 function openTabata() {
   const saved = loadTabataSettings();
-  tabata.settings = { exTime: 40, restTime: 10, rounds: 8, warmupTime: 0, cooldownTime: 0, ...saved };
+  tabata.settings = { exTime: 40, restTime: 10, rounds: 8, warmupTime: 60, cooldownTime: 60, warmupEnabled: false, cooldownEnabled: false, ...saved };
   syncSettingsDisplay();
+  applyToggleUI('warmupEnabled',   'warmupStepperRow',   'warmupToggle');
+  applyToggleUI('cooldownEnabled', 'cooldownStepperRow', 'cooldownToggle');
   renderPresets();
   showTabataView('idle');
   openOverlay('tabataOverlay');
@@ -867,7 +877,7 @@ function startTabataTimer() {
   tabata.round  = 1;
   tabata.paused = false;
   document.getElementById('tabataPause').textContent = '일시정지';
-  if (tabata.settings.warmupTime > 0) {
+  if (tabata.settings.warmupEnabled && tabata.settings.warmupTime > 0) {
     tabata.phase    = 'warmup';
     tabata.timeLeft = tabata.settings.warmupTime;
     soundWarmup();
@@ -917,7 +927,7 @@ function tickTabata() {
       soundExercise();
     } else if (tabata.phase === 'exercise') {
       if (tabata.round >= settings.rounds) {
-        if (settings.cooldownTime > 0) {
+        if (settings.cooldownEnabled && settings.cooldownTime > 0) {
           tabata.phase    = 'cooldown';
           tabata.timeLeft = settings.cooldownTime;
           soundCooldown();
@@ -986,8 +996,17 @@ function makeStepper(decId, incId, key, displayId, step, min, max, bigDecId, big
 makeStepper('exDec',       'exInc',       'exTime',      'exTimeSec',       15, 15, 300);
 makeStepper('restDec',     'restInc',     'restTime',    'restTimeSec',     15, 15, 300);
 makeStepper('roundDec',    'roundInc',    'rounds',      'roundCount',       1,  1,  99);
-makeStepper('warmupDec',   'warmupInc',   'warmupTime',  'warmupTimeSec',   30, 0, 300);
-makeStepper('cooldownDec', 'cooldownInc', 'cooldownTime','cooldownTimeSec', 30, 0, 300);
+makeStepper('warmupDec',   'warmupInc',   'warmupTime',  'warmupTimeSec',   30, 30, 300);
+makeStepper('cooldownDec', 'cooldownInc', 'cooldownTime','cooldownTimeSec', 30, 30, 300);
+
+document.getElementById('warmupToggle').addEventListener('click', () => {
+  tabata.settings.warmupEnabled = !tabata.settings.warmupEnabled;
+  applyToggleUI('warmupEnabled', 'warmupStepperRow', 'warmupToggle');
+});
+document.getElementById('cooldownToggle').addEventListener('click', () => {
+  tabata.settings.cooldownEnabled = !tabata.settings.cooldownEnabled;
+  applyToggleUI('cooldownEnabled', 'cooldownStepperRow', 'cooldownToggle');
+});
 
 document.getElementById('tabataFab').addEventListener('click', openTabata);
 document.getElementById('tabataClose').addEventListener('click', closeTabata);
