@@ -945,8 +945,8 @@ function makeStepper(decId, incId, key, displayId, step, min, max, bigDecId, big
 makeStepper('exDec',       'exInc',       'exTime',      'exTimeSec',       15, 15, 300);
 makeStepper('restDec',     'restInc',     'restTime',    'restTimeSec',     15, 15, 300);
 makeStepper('roundDec',    'roundInc',    'rounds',      'roundCount',       1,  1,  99);
-makeStepper('warmupDec',   'warmupInc',   'warmupTime',  'warmupTimeSec',   30,  0, 300, 'warmupDecBig',   'warmupIncBig',   60);
-makeStepper('cooldownDec', 'cooldownInc', 'cooldownTime','cooldownTimeSec', 30,  0, 300, 'cooldownDecBig', 'cooldownIncBig', 60);
+makeStepper('warmupDec',   'warmupInc',   'warmupTime',  'warmupTimeSec',   30, 0, 300);
+makeStepper('cooldownDec', 'cooldownInc', 'cooldownTime','cooldownTimeSec', 30, 0, 300);
 
 document.getElementById('tabataFab').addEventListener('click', openTabata);
 document.getElementById('tabataClose').addEventListener('click', closeTabata);
