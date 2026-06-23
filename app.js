@@ -1714,6 +1714,12 @@ document.getElementById('diarySaveBtn').addEventListener('click', () => {
 
 document.getElementById('diaryBackBtn').addEventListener('click', showDiaryList);
 
+document.getElementById('diaryEditBtn').addEventListener('click', () => {
+  const id = document.getElementById('diaryDetailView').dataset.entryId;
+  const entry = getDiaryEntries().find(e => e.id === id);
+  if (entry) showDiaryWrite(entry);
+});
+
 document.getElementById('diaryDeleteBtn').addEventListener('click', () => {
   const id = document.getElementById('diaryDetailView').dataset.entryId;
   if (!id) return;
