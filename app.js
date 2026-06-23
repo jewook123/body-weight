@@ -3,6 +3,7 @@ const GOAL_KEY = 'bodyweight_goal';
 const THEME_KEY = 'bodyweight_theme';
 const CHECKS_KEY = 'bodyweight_daily_checks';
 const MISSION_CFG_KEY = 'bodyweight_mission_cfg';
+const DIARY_KEY = 'bodyweight_diary';
 
 let currentPeriod = '3m';
 
@@ -908,6 +909,17 @@ function finishTabata() {
   document.getElementById('tabataOverlay').style.background = '';
 }
 
+function finishTabata() {
+  stopTabataTimer();
+  tabata.phase = 'done';
+  soundDone();
+  setTimeout(speakDone, 700);
+  document.getElementById('tabataDoneSub').textContent =
+    `${tabata.settings.rounds}라운드 모두 완료했어요 💪`;
+  showTabataView('done');
+  document.getElementById('tabataOverlay').style.background = '';
+}
+
 function tickTabata() {
   if (tabata.paused) return;
   tabata.timeLeft--;
@@ -1104,6 +1116,611 @@ document.getElementById('phrasesAddForm').addEventListener('submit', e => {
 });
 
 document.getElementById('tabataPhrasesBtn').addEventListener('click', openPhrasesPanel);
+
+// ── 긍정 확언 플레이리스트 ────────────────────────────────────────────────────
+const AFFIRMATION_KEY = 'bodyweight_affirmations';
+
+function getAffirmations() {
+  const raw = JSON.parse(localStorage.getItem(AFFIRMATION_KEY) || '[]');
+  // 이전 버전(string 배열) 마이그레이션
+  return raw.map(item => typeof item === 'string' ? { text: item, voiceName: '' } : item);
+}
+function saveAffirmations(arr) {
+  localStorage.setItem(AFFIRMATION_KEY, JSON.stringify(arr));
+}
+
+// 최면/명상 배경음 노드 참조
+let hypnoNodes = null;
+let hypnoMasterGain = null;
+
+function startHypnoticMusic(volume) {
+  try {
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+
+    hypnoMasterGain = ctx.createGain();
+    hypnoMasterGain.gain.setValueAtTime(0, ctx.currentTime);
+    hypnoMasterGain.gain.linearRampToValueAtTime(volume, ctx.currentTime + 3);
+    hypnoMasterGain.connect(ctx.destination);
+
+    // 드론음 A: 432 Hz
+    const osc1 = ctx.createOscillator();
+    const g1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.value = 432;
+    g1.gain.value = 0.35;
+    osc1.connect(g1); g1.connect(hypnoMasterGain);
+    osc1.start();
+
+    // 드론음 B: 436 Hz (binaural beat 4 Hz — 세타파)
+    const osc2 = ctx.createOscillator();
+    const g2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.value = 436;
+    g2.gain.value = 0.35;
+    osc2.connect(g2); g2.connect(hypnoMasterGain);
+    osc2.start();
+
+    // 저주파 서브 베이스 (128 Hz)
+    const osc3 = ctx.createOscillator();
+    const g3 = ctx.createGain();
+    osc3.type = 'sine';
+    osc3.frequency.value = 128;
+    g3.gain.value = 0.15;
+    osc3.connect(g3); g3.connect(hypnoMasterGain);
+    osc3.start();
+
+    // 느린 LFO (0.05 Hz) — 볼륨 천천히 맥동
+    const lfo = ctx.createOscillator();
+    const lfoGain = ctx.createGain();
+    lfo.type = 'sine';
+    lfo.frequency.value = 0.05;
+    lfoGain.gain.value = 0.08;
+    lfo.connect(lfoGain); lfoGain.connect(hypnoMasterGain.gain);
+    lfo.start();
+
+    // 화이트 노이즈 (lowpass 필터로 부드럽게)
+    const bufSize = ctx.sampleRate * 4;
+    const noiseBuffer = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const data = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource();
+    noise.buffer = noiseBuffer;
+    noise.loop = true;
+    const lpf = ctx.createBiquadFilter();
+    lpf.type = 'lowpass';
+    lpf.frequency.value = 200;
+    const ng = ctx.createGain();
+    ng.gain.value = 0.04;
+    noise.connect(lpf); lpf.connect(ng); ng.connect(hypnoMasterGain);
+    noise.start();
+
+    hypnoNodes = [osc1, osc2, osc3, lfo, noise];
+  } catch(_) {}
+}
+
+function stopHypnoticMusic() {
+  try {
+    if (hypnoMasterGain) {
+      const ctx = getAudioCtx();
+      hypnoMasterGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.5);
+      const nodes = hypnoNodes;
+      const gain  = hypnoMasterGain;
+      setTimeout(() => {
+        nodes?.forEach(n => { try { n.stop(); } catch(_) {} });
+        gain?.disconnect();
+      }, 1600);
+      hypnoNodes = null;
+      hypnoMasterGain = null;
+    }
+  } catch(_) {}
+}
+
+function setHypnoVolume(vol) {
+  if (hypnoMasterGain) {
+    try {
+      hypnoMasterGain.gain.setTargetAtTime(vol, getAudioCtx().currentTime, 0.3);
+    } catch(_) {}
+  }
+}
+
+// 확언 TTS — 한국어/영어 음성만 사용
+function getKoEnVoices() {
+  if (!window.speechSynthesis) return [];
+  return speechSynthesis.getVoices().filter(v => v.lang.startsWith('ko') || v.lang.startsWith('en'));
+}
+
+function buildVoiceOptions(selectedName) {
+  const voices = getKoEnVoices();
+  if (!voices.length) return '<option value="">음성 로딩 중...</option>';
+  return voices.map(v => {
+    const flag = v.lang.startsWith('ko') ? '🇰🇷 ' : '🇺🇸 ';
+    const sel  = v.name === selectedName ? ' selected' : '';
+    return `<option value="${v.name}"${sel}>${flag}${v.name} (${v.lang})</option>`;
+  }).join('');
+}
+
+// 음성 목록 초기화 (브라우저가 비동기로 로드하는 경우 대응)
+function populateVoiceSelects() {
+  if (!window.speechSynthesis) return;
+  const voices = getKoEnVoices();
+  if (!voices.length) return;
+
+  // 추가 폼의 음성 선택
+  const newSel = document.getElementById('affirmationNewVoice');
+  if (newSel) {
+    const prev = newSel.value;
+    newSel.innerHTML = buildVoiceOptions(prev);
+    // 기본값: 한국어 음성 우선
+    if (!prev) {
+      const koVoice = voices.find(v => v.lang.startsWith('ko'));
+      newSel.value = koVoice ? koVoice.name : voices[0].name;
+    }
+  }
+
+  // 기존 아이템 행의 음성 선택 (렌더링 후 채움)
+  document.querySelectorAll('.affirmation-item-voice').forEach(sel => {
+    const current = sel.value;
+    sel.innerHTML = buildVoiceOptions(current);
+    if (current) sel.value = current;
+  });
+}
+
+if (window.speechSynthesis) {
+  populateVoiceSelects();
+  speechSynthesis.addEventListener('voiceschanged', populateVoiceSelects);
+}
+
+function speakAffirmation(item, onEnd) {
+  if (!window.speechSynthesis) { onEnd?.(); return; }
+  speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(item.text);
+
+  const voices = getKoEnVoices();
+  const found  = voices.find(v => v.name === item.voiceName);
+  if (found) {
+    utt.voice = found;
+  } else {
+    // voiceName 미지정 시 한국어 음성 기본
+    const ko = voices.find(v => v.lang.startsWith('ko'));
+    if (ko) utt.voice = ko;
+  }
+
+  utt.rate   = parseFloat(document.getElementById('affirmationRate')?.value  ?? 0.75);
+  utt.pitch  = parseFloat(document.getElementById('affirmationPitch')?.value ?? 0.9);
+  utt.volume = parseInt(document.getElementById('affirmationSpeechVol')?.value ?? 100, 10) / 100;
+  utt.onend  = () => onEnd?.();
+  speechSynthesis.speak(utt);
+}
+
+// 확언 상태
+const affState = {
+  playing: false,
+  paused: false,
+  currentIndex: 0,
+  items: [],
+  pauseTimeout: null,
+};
+
+function renderAffirmationItems() {
+  const items = getAffirmations();
+  const el = document.getElementById('affirmationItems');
+  if (!items.length) {
+    el.innerHTML = '<p class="ms-empty">확언을 추가해보세요 🌱</p>';
+    return;
+  }
+  el.innerHTML = items.map((item, i) => `
+    <div class="affirmation-item" data-idx="${i}">
+      <div class="affirmation-item-top">
+        <span class="affirmation-item-num">${i + 1}</span>
+        <span class="affirmation-item-text">${item.text}</span>
+        <button class="affirmation-edit-btn" data-idx="${i}" title="수정">✏️</button>
+        <button class="ms-delete" data-idx="${i}">삭제</button>
+      </div>
+      <div class="affirmation-item-voice-row">
+        <span class="affirmation-voice-label">🗣️ 음성</span>
+        <select class="affirmation-select affirmation-item-voice" data-idx="${i}">
+          ${buildVoiceOptions(item.voiceName)}
+        </select>
+      </div>
+    </div>`).join('');
+}
+
+function startEditAffirmation(idx) {
+  const items = getAffirmations();
+  const item = items[idx];
+  if (!item) return;
+  const el = document.querySelector(`.affirmation-item[data-idx="${idx}"]`);
+  if (!el) return;
+  const top = el.querySelector('.affirmation-item-top');
+  top.innerHTML = `
+    <span class="affirmation-item-num">${idx + 1}</span>
+    <textarea class="affirmation-textarea affirmation-edit-textarea" rows="3">${item.text}</textarea>
+    <button class="affirmation-edit-confirm-btn" data-idx="${idx}" title="저장">✓</button>
+    <button class="affirmation-edit-cancel-btn" data-idx="${idx}" title="취소">✕</button>
+  `;
+  top.querySelector('.affirmation-edit-textarea').focus();
+}
+
+function confirmEditAffirmation(idx) {
+  const el = document.querySelector(`.affirmation-item[data-idx="${idx}"]`);
+  if (!el) return;
+  const textarea = el.querySelector('.affirmation-edit-textarea');
+  const newText = textarea?.value.trim();
+  if (!newText) { showToast('내용을 입력해주세요'); return; }
+  const items = getAffirmations();
+  if (items[idx]) {
+    items[idx].text = newText;
+    saveAffirmations(items);
+    showToast('수정됐어요 ✨');
+  }
+  renderAffirmationItems();
+}
+
+function showAffirmationView(view) {
+  document.getElementById('affirmationList').style.display   = view === 'list'   ? 'flex' : 'none';
+  document.getElementById('affirmationPlayer').style.display = view === 'player' ? 'flex' : 'none';
+}
+
+function updatePlayerDisplay() {
+  const items = affState.items;
+  const idx   = affState.currentIndex;
+
+  const list = document.getElementById('affirmationPlayerList');
+  if (list) {
+    list.innerHTML = items.map((item, i) =>
+      `<div class="affirmation-player-item${i === idx ? ' affirmation-player-item--active' : ''}" data-idx="${i}">${item.text || ''}</div>`
+    ).join('');
+    const active = list.querySelector('.affirmation-player-item--active');
+    if (active) active.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+
+  document.getElementById('affirmationProgressLabel').textContent = `${idx + 1} / ${items.length}`;
+  document.getElementById('affirmationPauseBtn').textContent = affState.paused ? '▶' : '⏸';
+  updateMediaSession();
+}
+
+function playNextAffirmation() {
+  if (!affState.playing) return;
+  updatePlayerDisplay();
+
+  // 확언 읽기 후 1.5초 쉬고 다음으로
+  speakAffirmation(affState.items[affState.currentIndex], () => {
+    if (!affState.playing || affState.paused) return;
+    affState.pauseTimeout = setTimeout(() => {
+      if (!affState.playing || affState.paused) return;
+      affState.currentIndex = (affState.currentIndex + 1) % affState.items.length;
+      playNextAffirmation();
+    }, 1500);
+  });
+}
+
+// 백그라운드 재생 유지: 무음 keepalive 오디오 (화면 꺼짐 시 오디오 포커스 유지)
+let _keepaliveSource = null;
+function startKeepalive() {
+  try {
+    const ctx = getAudioCtx();
+    if (_keepaliveSource) return;
+    const buf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    const g = ctx.createGain();
+    g.gain.value = 0.0001;
+    src.connect(g); g.connect(ctx.destination);
+    src.start();
+    _keepaliveSource = src;
+  } catch(_) {}
+}
+function stopKeepalive() {
+  try { _keepaliveSource?.stop(); } catch(_) {}
+  _keepaliveSource = null;
+}
+
+function updateMediaSession() {
+  if (!('mediaSession' in navigator)) return;
+  const item = affState.items[affState.currentIndex];
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: item?.text || '확언',
+    artist: `${affState.currentIndex + 1} / ${affState.items.length}`,
+    album: '긍정 확언',
+  });
+  navigator.mediaSession.playbackState = affState.paused ? 'paused' : 'playing';
+  navigator.mediaSession.setActionHandler('play',          () => { if (affState.paused) pauseResumeAffirmations(); });
+  navigator.mediaSession.setActionHandler('pause',         () => { if (!affState.paused) pauseResumeAffirmations(); });
+  navigator.mediaSession.setActionHandler('nexttrack',     () => skipAffirmation());
+  navigator.mediaSession.setActionHandler('stop',          () => stopAffirmations());
+}
+
+// 화면이 다시 켜졌을 때 TTS가 끊겼으면 재시작
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && affState.playing && !affState.paused) {
+    if (!speechSynthesis.speaking && !speechSynthesis.pending) {
+      playNextAffirmation();
+    }
+  }
+});
+
+function isBgmEnabled() {
+  return document.getElementById('affirmationBgmEnabled')?.checked ?? true;
+}
+
+function startAffirmations() {
+  const items = getAffirmations();
+  if (!items.length) { showToast('확언을 먼저 추가해주세요!'); return; }
+  affState.playing      = true;
+  affState.paused       = false;
+  affState.currentIndex = 0;
+  affState.items        = [...items];
+
+  if (isBgmEnabled()) {
+    const vol = parseInt(document.getElementById('affirmationVolume').value, 10) / 100 * 0.6;
+    startHypnoticMusic(vol);
+  }
+  startKeepalive();
+  updateMediaSession();
+  showAffirmationView('player');
+  playNextAffirmation();
+}
+
+function pauseResumeAffirmations() {
+  if (!affState.playing) return;
+  if (affState.paused) {
+    affState.paused = false;
+    if (isBgmEnabled()) {
+      const vol = parseInt(document.getElementById('affirmationVolume').value, 10) / 100 * 0.6;
+      setHypnoVolume(vol);
+    }
+    speechSynthesis.resume();
+    // resume이 안 될 경우 현재 항목부터 다시 재생
+    if (!speechSynthesis.speaking) playNextAffirmation();
+    document.getElementById('affirmationPauseBtn').textContent = '⏸';
+  } else {
+    affState.paused = true;
+    clearTimeout(affState.pauseTimeout);
+    speechSynthesis.pause();
+    setHypnoVolume(0.05);
+    document.getElementById('affirmationPauseBtn').textContent = '▶';
+  }
+}
+
+function stopAffirmations() {
+  affState.playing = false;
+  affState.paused  = false;
+  clearTimeout(affState.pauseTimeout);
+  speechSynthesis.cancel();
+  stopHypnoticMusic();
+  stopKeepalive();
+  if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'none';
+  showAffirmationView('list');
+}
+
+function skipAffirmation() {
+  if (!affState.playing) return;
+  clearTimeout(affState.pauseTimeout);
+  speechSynthesis.cancel();
+  affState.currentIndex = (affState.currentIndex + 1) % affState.items.length;
+  if (!affState.paused) playNextAffirmation();
+  else updatePlayerDisplay();
+}
+
+function openAffirmation() {
+  renderAffirmationItems();
+  showAffirmationView('list');
+  openOverlay('affirmationOverlay');
+}
+function closeAffirmation() {
+  stopAffirmations();
+  closeOverlay('affirmationOverlay');
+}
+
+// 확언 이벤트
+document.getElementById('affirmationFab').addEventListener('click', openAffirmation);
+document.getElementById('affirmationClose').addEventListener('click', closeAffirmation);
+document.getElementById('affirmationOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('affirmationOverlay')) closeAffirmation();
+});
+
+document.getElementById('affirmationAddForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const text      = document.getElementById('affirmationNewText').value.trim();
+  const voiceName = document.getElementById('affirmationNewVoice').value;
+  if (!text) return;
+  const items = getAffirmations();
+  items.push({ text, voiceName });
+  saveAffirmations(items);
+  document.getElementById('affirmationNewText').value = '';
+  renderAffirmationItems();
+  showToast('확언이 추가됐어요 ✨');
+});
+
+document.getElementById('affirmationItems').addEventListener('click', e => {
+  if (e.target.closest('.ms-delete')) {
+    const idx = parseInt(e.target.closest('.ms-delete').dataset.idx, 10);
+    const items = getAffirmations();
+    items.splice(idx, 1);
+    saveAffirmations(items);
+    renderAffirmationItems();
+    return;
+  }
+  if (e.target.closest('.affirmation-edit-btn')) {
+    startEditAffirmation(parseInt(e.target.closest('.affirmation-edit-btn').dataset.idx, 10));
+    return;
+  }
+  if (e.target.closest('.affirmation-edit-confirm-btn')) {
+    confirmEditAffirmation(parseInt(e.target.closest('.affirmation-edit-confirm-btn').dataset.idx, 10));
+    return;
+  }
+  if (e.target.closest('.affirmation-edit-cancel-btn')) {
+    renderAffirmationItems();
+    return;
+  }
+});
+
+document.getElementById('affirmationItems').addEventListener('change', e => {
+  const sel = e.target.closest('.affirmation-item-voice');
+  if (!sel) return;
+  const items = getAffirmations();
+  const idx = parseInt(sel.dataset.idx, 10);
+  if (items[idx]) {
+    items[idx].voiceName = sel.value;
+    saveAffirmations(items);
+  }
+});
+
+document.getElementById('affirmationPlay').addEventListener('click', startAffirmations);
+document.getElementById('affirmationPauseBtn').addEventListener('click', pauseResumeAffirmations);
+document.getElementById('affirmationStopBtn').addEventListener('click', stopAffirmations);
+document.getElementById('affirmationSkipBtn').addEventListener('click', skipAffirmation);
+
+document.getElementById('affirmationVolume').addEventListener('input', e => {
+  document.getElementById('affirmationVolumeVal').textContent = `${e.target.value}%`;
+  if (!isBgmEnabled()) return;
+  const vol = parseInt(e.target.value, 10) / 100 * 0.6;
+  if (affState.playing && !affState.paused) setHypnoVolume(vol);
+});
+
+document.getElementById('affirmationBgmEnabled').addEventListener('change', e => {
+  const enabled = e.target.checked;
+  document.getElementById('affirmationVolume').disabled = !enabled;
+  document.getElementById('affirmationVolumeVal').style.opacity = enabled ? '' : '0.4';
+  if (!affState.playing) return;
+  if (enabled) {
+    const vol = parseInt(document.getElementById('affirmationVolume').value, 10) / 100 * 0.6;
+    startHypnoticMusic(vol);
+  } else {
+    stopHypnoticMusic();
+  }
+});
+
+document.getElementById('affirmationRate').addEventListener('input', e => {
+  document.getElementById('affirmationRateVal').textContent = parseFloat(e.target.value).toFixed(2);
+});
+document.getElementById('affirmationPitch').addEventListener('input', e => {
+  document.getElementById('affirmationPitchVal').textContent = parseFloat(e.target.value).toFixed(2);
+});
+document.getElementById('affirmationSpeechVol').addEventListener('input', e => {
+  document.getElementById('affirmationSpeechVolVal').textContent = e.target.value + '%';
+});
+
+// ── Emotion Diary ──────────────────────────────────────────────────────────
+
+function getDiaryEntries() {
+  try { return JSON.parse(localStorage.getItem(DIARY_KEY)) || []; } catch { return []; }
+}
+function saveDiaryEntries(entries) {
+  localStorage.setItem(DIARY_KEY, JSON.stringify(entries));
+}
+
+const diaryState = { selectedEmotion: '', editingId: null };
+
+function formatDiaryDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+}
+
+function openDiary() {
+  showDiaryList();
+  openOverlay('diaryOverlay');
+}
+
+function showDiaryList() {
+  document.getElementById('diaryWriteView').style.display = 'none';
+  document.getElementById('diaryDetailView').style.display = 'none';
+  document.getElementById('diaryListView').style.display = '';
+  renderDiaryList();
+}
+
+function showDiaryWrite(entry) {
+  diaryState.editingId = entry ? entry.id : null;
+  diaryState.selectedEmotion = entry ? entry.emotion : '';
+  document.getElementById('diaryListView').style.display = 'none';
+  document.getElementById('diaryDetailView').style.display = 'none';
+  document.getElementById('diaryWriteView').style.display = '';
+  document.getElementById('diaryWriteDate').textContent = formatDiaryDate(today());
+  document.getElementById('diaryContent').value = entry ? entry.content : '';
+  document.querySelectorAll('.emotion-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.emotion === diaryState.selectedEmotion);
+  });
+}
+
+function showDiaryDetail(entry) {
+  document.getElementById('diaryListView').style.display = 'none';
+  document.getElementById('diaryWriteView').style.display = 'none';
+  const view = document.getElementById('diaryDetailView');
+  view.style.display = '';
+  document.getElementById('diaryDetailDate').textContent = formatDiaryDate(entry.date);
+  document.getElementById('diaryDetailEmotion').textContent = entry.emotion || '📝';
+  document.getElementById('diaryDetailContent').textContent = entry.content;
+  view.dataset.entryId = entry.id;
+}
+
+function renderDiaryList() {
+  const entries = getDiaryEntries().sort((a, b) => b.date.localeCompare(a.date));
+  const list = document.getElementById('diaryList');
+  const empty = document.getElementById('diaryEmpty');
+  if (entries.length === 0) {
+    list.innerHTML = '';
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+  list.innerHTML = entries.map(e => `
+    <div class="diary-item" data-id="${e.id}">
+      <div class="diary-item-emotion">${e.emotion || '📝'}</div>
+      <div class="diary-item-body">
+        <div class="diary-item-date">${formatDiaryDate(e.date)}</div>
+        <div class="diary-item-preview">${e.content || '(내용 없음)'}</div>
+      </div>
+    </div>
+  `).join('');
+  list.querySelectorAll('.diary-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const entry = entries.find(e => e.id === el.dataset.id);
+      if (entry) showDiaryDetail(entry);
+    });
+  });
+}
+
+document.getElementById('diaryFab').addEventListener('click', openDiary);
+document.getElementById('diaryClose').addEventListener('click', () => closeOverlay('diaryOverlay'));
+document.getElementById('diaryNewBtn').addEventListener('click', () => showDiaryWrite(null));
+document.getElementById('diaryCancelBtn').addEventListener('click', showDiaryList);
+
+document.querySelectorAll('.emotion-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    diaryState.selectedEmotion = btn.dataset.emotion;
+    document.querySelectorAll('.emotion-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  });
+});
+
+document.getElementById('diarySaveBtn').addEventListener('click', () => {
+  const content = document.getElementById('diaryContent').value.trim();
+  if (!content && !diaryState.selectedEmotion) return;
+  const entries = getDiaryEntries();
+  if (diaryState.editingId) {
+    const idx = entries.findIndex(e => e.id === diaryState.editingId);
+    if (idx !== -1) {
+      entries[idx].emotion = diaryState.selectedEmotion;
+      entries[idx].content = content;
+    }
+  } else {
+    entries.push({ id: Date.now().toString(), date: today(), emotion: diaryState.selectedEmotion, content });
+  }
+  saveDiaryEntries(entries);
+  showDiaryList();
+});
+
+document.getElementById('diaryBackBtn').addEventListener('click', showDiaryList);
+
+document.getElementById('diaryDeleteBtn').addEventListener('click', () => {
+  const id = document.getElementById('diaryDetailView').dataset.entryId;
+  if (!id) return;
+  if (!confirm('이 일기를 삭제할까요?')) return;
+  saveDiaryEntries(getDiaryEntries().filter(e => e.id !== id));
+  showDiaryList();
+});
 
 // Init
 applyTheme(localStorage.getItem(THEME_KEY) || 'light');

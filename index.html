@@ -166,8 +166,132 @@
   </div>
   <div class="toast" id="toast"></div>
 
+  <!-- Affirmation Overlay -->
+  <div class="tabata-overlay" id="affirmationOverlay">
+    <div class="tabata-panel">
+      <div class="tabata-header">
+        <h2>✨ 긍정 확언</h2>
+        <button class="close-fs-btn" id="affirmationClose">✕</button>
+      </div>
+
+      <!-- 목록 화면 -->
+      <div id="affirmationList" class="affirmation-list-view">
+        <div class="affirmation-items" id="affirmationItems"></div>
+        <form id="affirmationAddForm" class="affirmation-add-form">
+          <textarea id="affirmationNewText" placeholder="확언을 입력하세요&#10;예: 나는 매일 건강해지고 있다" class="affirmation-textarea" rows="3" required></textarea>
+          <div class="affirmation-voice-row">
+            <label class="affirmation-voice-label">🗣️ 음성</label>
+            <select id="affirmationNewVoice" class="affirmation-select"></select>
+          </div>
+          <button type="submit" class="submit-btn">+ 추가</button>
+        </form>
+        <!-- 공통 음성 설정 -->
+        <div class="affirmation-voice-settings">
+          <div class="affirmation-voice-row">
+            <label class="affirmation-voice-label">⚡ 속도</label>
+            <input type="range" id="affirmationRate" min="0.3" max="2" step="0.05" value="0.75" class="affirmation-volume-slider">
+            <span class="affirmation-slider-val" id="affirmationRateVal">0.75</span>
+          </div>
+          <div class="affirmation-voice-row">
+            <label class="affirmation-voice-label">🎵 피치</label>
+            <input type="range" id="affirmationPitch" min="0.1" max="2" step="0.05" value="0.9" class="affirmation-volume-slider">
+            <span class="affirmation-slider-val" id="affirmationPitchVal">0.90</span>
+          </div>
+          <div class="affirmation-voice-row">
+            <label class="affirmation-voice-label">🔊 음량</label>
+            <input type="range" id="affirmationSpeechVol" min="0" max="100" value="100" class="affirmation-volume-slider">
+            <span class="affirmation-slider-val" id="affirmationSpeechVolVal">100%</span>
+          </div>
+        </div>
+        <div class="affirmation-voice-row affirmation-bgm-row">
+          <span class="affirmation-voice-label">🎵 배경음</span>
+          <label class="affirmation-toggle">
+            <input type="checkbox" id="affirmationBgmEnabled" checked>
+            <span class="affirmation-toggle-track"></span>
+          </label>
+          <input type="range" id="affirmationVolume" min="0" max="100" value="40" class="affirmation-volume-slider">
+          <span class="affirmation-slider-val" id="affirmationVolumeVal">40%</span>
+        </div>
+        <button class="tabata-action-btn" id="affirmationPlay" style="margin-top:auto">▶ 재생</button>
+      </div>
+
+      <!-- 재생 화면 -->
+      <div id="affirmationPlayer" class="affirmation-player-view" style="display:none">
+        <div class="affirmation-player-list" id="affirmationPlayerList"></div>
+        <div class="affirmation-progress-label" id="affirmationProgressLabel"></div>
+        <div class="affirmation-controls">
+          <button class="affirmation-ctrl-btn" id="affirmationStopBtn" title="정지">⏹</button>
+          <button class="affirmation-ctrl-btn affirmation-ctrl-btn--main" id="affirmationPauseBtn" title="일시정지/재생">⏸</button>
+          <button class="affirmation-ctrl-btn" id="affirmationSkipBtn" title="다음">⏭</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Affirmation FAB -->
+  <button class="affirmation-fab" id="affirmationFab">✨</button>
+
   <!-- Tabata FAB -->
   <button class="tabata-fab" id="tabataFab">⏱️</button>
+
+  <!-- Emotion Diary FAB -->
+  <button class="diary-fab" id="diaryFab">📔</button>
+
+  <!-- Emotion Diary Overlay -->
+  <div class="diary-overlay" id="diaryOverlay">
+    <div class="diary-panel">
+      <div class="diary-header">
+        <h2>📔 감정일기</h2>
+        <div class="diary-header-actions">
+          <button class="close-fs-btn" id="diaryNewBtn" title="새 일기 쓰기">✏️</button>
+          <button class="close-fs-btn" id="diaryClose">✕</button>
+        </div>
+      </div>
+
+      <!-- 작성 화면 -->
+      <div id="diaryWriteView" class="diary-write-view">
+        <div class="diary-write-date" id="diaryWriteDate"></div>
+        <div class="diary-emotion-picker">
+          <span class="diary-emotion-label">오늘의 감정</span>
+          <div class="diary-emotions">
+            <button class="emotion-btn" data-emotion="😊">😊<span>기쁨</span></button>
+            <button class="emotion-btn" data-emotion="😌">😌<span>평온</span></button>
+            <button class="emotion-btn" data-emotion="😐">😐<span>보통</span></button>
+            <button class="emotion-btn" data-emotion="😔">😔<span>슬픔</span></button>
+            <button class="emotion-btn" data-emotion="😤">😤<span>화남</span></button>
+            <button class="emotion-btn" data-emotion="😰">😰<span>불안</span></button>
+            <button class="emotion-btn" data-emotion="😴">😴<span>피곤</span></button>
+            <button class="emotion-btn" data-emotion="🥳">🥳<span>신남</span></button>
+          </div>
+        </div>
+        <textarea class="diary-textarea" id="diaryContent" placeholder="오늘 하루는 어땠나요? 자유롭게 적어보세요..."></textarea>
+        <div class="diary-write-actions">
+          <button class="diary-cancel-btn" id="diaryCancelBtn">취소</button>
+          <button class="diary-save-btn" id="diarySaveBtn">저장</button>
+        </div>
+      </div>
+
+      <!-- 목록 화면 -->
+      <div id="diaryListView" class="diary-list-view">
+        <div class="diary-list" id="diaryList"></div>
+        <div class="diary-empty" id="diaryEmpty" style="display:none">
+          <div class="diary-empty-icon">📝</div>
+          <p>아직 작성된 일기가 없어요.<br>오늘의 감정을 기록해보세요!</p>
+        </div>
+      </div>
+
+      <!-- 상세 화면 -->
+      <div id="diaryDetailView" class="diary-detail-view" style="display:none">
+        <div class="diary-detail-header">
+          <button class="diary-back-btn" id="diaryBackBtn">← 목록</button>
+          <button class="diary-delete-btn" id="diaryDeleteBtn">🗑️ 삭제</button>
+        </div>
+        <div class="diary-detail-date" id="diaryDetailDate"></div>
+        <div class="diary-detail-emotion" id="diaryDetailEmotion"></div>
+        <div class="diary-detail-content" id="diaryDetailContent"></div>
+      </div>
+    </div>
+  </div>
 
   <!-- Tabata Overlay -->
   <div class="tabata-overlay" id="tabataOverlay">

@@ -1034,6 +1034,30 @@ input:focus {
 
 /* ── Tabata Timer ──────────────────────────────────────────────────────────── */
 
+.affirmation-fab {
+  position: fixed;
+  bottom: 96px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #7c3aed;
+  color: white;
+  font-size: 24px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(124,58,237,0.45);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.affirmation-fab:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 24px rgba(124,58,237,0.55);
+}
+
 .tabata-fab {
   position: fixed;
   bottom: 28px;
@@ -1056,6 +1080,293 @@ input:focus {
 .tabata-fab:hover {
   transform: scale(1.08);
   box-shadow: 0 6px 24px rgba(59,130,246,0.55);
+}
+
+.diary-fab {
+  position: fixed;
+  bottom: 164px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #059669;
+  color: white;
+  font-size: 24px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(5,150,105,0.45);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.diary-fab:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 24px rgba(5,150,105,0.55);
+}
+
+/* ── Emotion Diary ─────────────────────────────────────────────────────────── */
+
+.diary-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 160;
+  flex-direction: column;
+  transition: background 0.4s;
+}
+.diary-overlay.open { display: flex; }
+
+.diary-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0 0 env(safe-area-inset-bottom);
+}
+
+.diary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.diary-header h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+.diary-header-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.diary-write-view {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.diary-write-date {
+  font-size: 0.9rem;
+  color: var(--text2);
+  font-weight: 600;
+}
+
+.diary-emotion-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.diary-emotion-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text2);
+}
+.diary-emotions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.emotion-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 10px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  cursor: pointer;
+  font-size: 22px;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+  min-width: 60px;
+}
+.emotion-btn span {
+  font-size: 10px;
+  color: var(--text2);
+  font-weight: 500;
+}
+.emotion-btn.selected {
+  border-color: #059669;
+  background: rgba(5,150,105,0.1);
+  transform: scale(1.05);
+}
+.emotion-btn:hover {
+  border-color: #059669;
+  background: rgba(5,150,105,0.07);
+}
+
+.diary-textarea {
+  flex: 1;
+  min-height: 160px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 0.95rem;
+  color: var(--text);
+  background: var(--card);
+  resize: none;
+  font-family: inherit;
+  line-height: 1.6;
+  transition: border-color 0.15s;
+}
+.diary-textarea:focus {
+  outline: none;
+  border-color: #059669;
+}
+
+.diary-write-actions {
+  display: flex;
+  gap: 10px;
+}
+.diary-cancel-btn {
+  flex: 1;
+  padding: 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--text2);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.diary-cancel-btn:hover { background: var(--border); }
+.diary-save-btn {
+  flex: 2;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: #059669;
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.diary-save-btn:hover { background: #047857; transform: scale(1.02); }
+
+.diary-list-view {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+}
+
+.diary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.diary-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--card);
+  border-radius: 14px;
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+}
+.diary-item:hover {
+  border-color: #059669;
+  transform: translateY(-1px);
+}
+.diary-item-emotion {
+  font-size: 28px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.diary-item-body {
+  flex: 1;
+  min-width: 0;
+}
+.diary-item-date {
+  font-size: 0.78rem;
+  color: var(--text2);
+  margin-bottom: 4px;
+}
+.diary-item-preview {
+  font-size: 0.9rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.diary-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text2);
+}
+.diary-empty-icon { font-size: 48px; margin-bottom: 12px; }
+.diary-empty p { line-height: 1.7; font-size: 0.9rem; }
+
+.diary-detail-view {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.diary-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.diary-back-btn {
+  background: none;
+  border: none;
+  color: #059669;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+}
+.diary-delete-btn {
+  background: none;
+  border: none;
+  color: var(--text2);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.15s, color 0.15s;
+}
+.diary-delete-btn:hover { background: #fee2e2; color: #dc2626; }
+.diary-detail-date {
+  font-size: 0.85rem;
+  color: var(--text2);
+  font-weight: 600;
+}
+.diary-detail-emotion {
+  font-size: 48px;
+  text-align: center;
+  padding: 8px 0;
+}
+.diary-detail-content {
+  font-size: 0.98rem;
+  color: var(--text);
+  line-height: 1.8;
+  white-space: pre-wrap;
+  background: var(--card);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1.5px solid var(--border);
+  min-height: 120px;
 }
 
 .tabata-overlay {
@@ -1420,6 +1731,339 @@ input:focus {
 .tabata-done-emoji { font-size: 80px; }
 .tabata-done-text  { font-size: 40px; font-weight: 800; }
 .tabata-done-sub   { font-size: 16px; color: var(--text-secondary); margin-bottom: 8px; }
+
+/* ── 긍정 확언 ─────────────────────────────────────────────────────────────── */
+.affirmation-list-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.affirmation-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.affirmation-item {
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.affirmation-item-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+}
+
+.affirmation-item-voice-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  width: 100%;
+}
+
+.affirmation-item-num {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+
+.affirmation-item-text {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.affirmation-edit-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+.affirmation-edit-btn:hover { opacity: 1; }
+
+.affirmation-edit-textarea {
+  flex: 1;
+  resize: vertical;
+}
+
+.affirmation-edit-confirm-btn,
+.affirmation-edit-cancel-btn {
+  flex-shrink: 0;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.affirmation-edit-confirm-btn {
+  background: var(--primary);
+  color: #fff;
+}
+.affirmation-edit-cancel-btn {
+  background: var(--border);
+  color: var(--text);
+}
+
+.affirmation-bgm-row {
+  padding: 10px 14px;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+}
+
+/* 토글 스위치 */
+.affirmation-toggle {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.affirmation-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.affirmation-toggle-track {
+  position: absolute;
+  inset: 0;
+  background: var(--border);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 0.25s;
+}
+.affirmation-toggle-track::after {
+  content: '';
+  position: absolute;
+  left: 3px; top: 3px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.25s;
+}
+.affirmation-toggle input:checked + .affirmation-toggle-track {
+  background: var(--primary);
+}
+.affirmation-toggle input:checked + .affirmation-toggle-track::after {
+  transform: translateX(16px);
+}
+
+.affirmation-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 음성 설정 */
+.affirmation-voice-settings {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.affirmation-voice-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.affirmation-voice-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  width: 58px;
+  flex-shrink: 0;
+}
+
+.affirmation-select {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  min-width: 0;
+}
+.affirmation-select:focus { outline: none; border-color: var(--primary); }
+
+.affirmation-slider-val {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  width: 38px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.affirmation-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  line-height: 1.5;
+  transition: border-color 0.15s;
+}
+.affirmation-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* 재생 화면 */
+.affirmation-player-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 16px 16px;
+  text-align: center;
+  min-height: 0;
+}
+
+.affirmation-player-list {
+  flex: 1;
+  width: 100%;
+  max-width: 420px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px 4px;
+  min-height: 0;
+}
+
+.affirmation-player-item {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  word-break: keep-all;
+  white-space: pre-wrap;
+  padding: 12px 16px;
+  border-radius: 12px;
+  transition: all 0.4s ease;
+  opacity: 0.45;
+  background: transparent;
+}
+
+.affirmation-player-item--active {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  opacity: 1;
+  background: var(--primary-light, rgba(139,92,246,0.12));
+  border-left: 4px solid var(--primary);
+  animation: affirmFadeIn 0.5s ease;
+}
+
+@keyframes affirmFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.affirmation-progress-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.affirmation-volume-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.affirmation-volume-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.affirmation-volume-slider {
+  flex: 1;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.affirmation-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.affirmation-ctrl-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.affirmation-ctrl-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.affirmation-ctrl-btn--main {
+  width: 68px;
+  height: 68px;
+  font-size: 26px;
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+.affirmation-ctrl-btn--main:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  color: white;
+}
 
 /* Responsive */
 @media (max-width: 540px) {
