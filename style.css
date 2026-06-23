@@ -1271,6 +1271,118 @@ input:focus {
   color: var(--primary);
 }
 
+/* Presets */
+.tabata-presets-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.tabata-presets-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.tabata-presets-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.preset-save-btn {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  background: none;
+  border: 1.5px solid var(--primary);
+  border-radius: 20px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+.preset-save-btn:hover { background: var(--primary); color: white; }
+.tabata-presets-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+  min-height: 34px;
+  align-items: center;
+}
+.tabata-presets-row::-webkit-scrollbar { display: none; }
+.presets-empty { font-size: 13px; color: var(--text-secondary); }
+.preset-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 5px 10px 5px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s;
+  flex-shrink: 0;
+}
+.preset-chip:hover { border-color: var(--primary); }
+.preset-chip-name { font-size: 14px; font-weight: 600; }
+.preset-chip-del {
+  font-size: 15px;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  font-family: inherit;
+  transition: color 0.15s;
+}
+.preset-chip-del:hover { color: #ef4444; }
+.preset-name-form {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.preset-name-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  min-width: 0;
+}
+.preset-name-input:focus { border-color: var(--primary); }
+.preset-name-confirm {
+  padding: 8px 14px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.preset-name-cancel {
+  padding: 8px 14px;
+  background: var(--border);
+  color: var(--text);
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
 /* Done */
 .tabata-done {
   flex: 1;

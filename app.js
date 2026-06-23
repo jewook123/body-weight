@@ -695,6 +695,48 @@ document.getElementById('msAddForm').addEventListener('submit', e => {
 
 // ── Tabata Timer ──────────────────────────────────────────────────────────────
 const TABATA_KEY = 'bodyweight_tabata';
+const PRESETS_KEY = 'bodyweight_tabata_presets';
+
+// Wake Lock
+let wakeLock = null;
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try { wakeLock = await navigator.wakeLock.request('screen'); } catch(_) {}
+}
+function releaseWakeLock() {
+  if (wakeLock) { wakeLock.release(); wakeLock = null; }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && tabata.intervalId !== null) requestWakeLock();
+});
+
+// Presets
+function getPresets() {
+  try { return JSON.parse(localStorage.getItem(PRESETS_KEY)) || []; } catch { return []; }
+}
+function savePresetsData(arr) { localStorage.setItem(PRESETS_KEY, JSON.stringify(arr)); }
+
+function syncSettingsDisplay() {
+  document.getElementById('exTimeSec').textContent       = tabata.settings.exTime;
+  document.getElementById('restTimeSec').textContent     = tabata.settings.restTime;
+  document.getElementById('roundCount').textContent      = tabata.settings.rounds;
+  document.getElementById('warmupTimeSec').textContent   = tabata.settings.warmupTime;
+  document.getElementById('cooldownTimeSec').textContent = tabata.settings.cooldownTime;
+}
+
+function renderPresets() {
+  const presets = getPresets();
+  const list = document.getElementById('tabataPresetsList');
+  if (!presets.length) {
+    list.innerHTML = '<span class="presets-empty">저장된 프리셋이 없어요</span>';
+    return;
+  }
+  list.innerHTML = presets.map((p, i) => `
+    <div class="preset-chip" data-idx="${i}">
+      <span class="preset-chip-name">${p.name}</span>
+      <button class="preset-chip-del" data-idx="${i}">×</button>
+    </div>`).join('');
+}
 
 // Web Audio beeps
 let audioCtx = null;
@@ -804,11 +846,8 @@ function saveTabataSettings() {
 function openTabata() {
   const saved = loadTabataSettings();
   tabata.settings = { exTime: 40, restTime: 10, rounds: 8, warmupTime: 0, cooldownTime: 0, ...saved };
-  document.getElementById('exTimeSec').textContent       = tabata.settings.exTime;
-  document.getElementById('restTimeSec').textContent     = tabata.settings.restTime;
-  document.getElementById('roundCount').textContent      = tabata.settings.rounds;
-  document.getElementById('warmupTimeSec').textContent   = tabata.settings.warmupTime;
-  document.getElementById('cooldownTimeSec').textContent = tabata.settings.cooldownTime;
+  syncSettingsDisplay();
+  renderPresets();
   showTabataView('idle');
   openOverlay('tabataOverlay');
 }
@@ -840,10 +879,12 @@ function startTabataTimer() {
   showTabataView('running');
   updateTabataDisplay();
   tabata.intervalId = setInterval(tickTabata, 1000);
+  requestWakeLock();
 }
 function stopTabataTimer() {
   clearInterval(tabata.intervalId);
   tabata.intervalId = null;
+  releaseWakeLock();
 }
 
 function finishTabata() {
@@ -975,6 +1016,48 @@ document.getElementById('tabataAddTime').addEventListener('click', () => {
   tabata.timeLeft += 30;
   updateTabataDisplay();
 });
+
+// Preset events
+document.getElementById('tabataPresetsList').addEventListener('click', e => {
+  const del = e.target.closest('.preset-chip-del');
+  if (del) {
+    const presets = getPresets();
+    presets.splice(parseInt(del.dataset.idx, 10), 1);
+    savePresetsData(presets);
+    renderPresets();
+    return;
+  }
+  const chip = e.target.closest('.preset-chip');
+  if (chip) {
+    const presets = getPresets();
+    const p = presets[parseInt(chip.dataset.idx, 10)];
+    if (!p) return;
+    tabata.settings = { ...tabata.settings, ...p };
+    syncSettingsDisplay();
+    showToast('프리셋을 불러왔어요!');
+  }
+});
+document.getElementById('tabataPresetSaveBtn').addEventListener('click', () => {
+  document.getElementById('presetNameForm').style.display = 'flex';
+  document.getElementById('presetNameInput').focus();
+});
+document.getElementById('presetNameConfirm').addEventListener('click', () => {
+  const name = document.getElementById('presetNameInput').value.trim();
+  if (!name) return;
+  const { exTime, restTime, rounds, warmupTime, cooldownTime } = tabata.settings;
+  const presets = getPresets();
+  presets.push({ name, exTime, restTime, rounds, warmupTime, cooldownTime });
+  savePresetsData(presets);
+  document.getElementById('presetNameInput').value = '';
+  document.getElementById('presetNameForm').style.display = 'none';
+  renderPresets();
+  showToast('프리셋이 저장됐어요!');
+});
+document.getElementById('presetNameCancel').addEventListener('click', () => {
+  document.getElementById('presetNameInput').value = '';
+  document.getElementById('presetNameForm').style.display = 'none';
+});
+document.getElementById('presetNameForm').addEventListener('submit', e => e.preventDefault());
 
 // Phrases panel events
 document.getElementById('closePhrases').addEventListener('click', closePhrasesPanel);
