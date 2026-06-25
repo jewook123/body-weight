@@ -2306,10 +2306,21 @@ input:focus {
 .pushup-stop-btn {
   width: 100%;
   max-width: 320px;
-  height: 44px;
-  border-radius: 10px;
-  font-size: 14px;
+  height: 36px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
   padding: 0;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s, color 0.15s;
+}
+.pushup-stop-btn:hover {
+  border-color: var(--negative);
+  color: var(--negative);
 }
 
 .pushup-plus-btn {
