@@ -519,6 +519,24 @@ function buildActivityMap() {
   return map;
 }
 
+// 날짜별 운동량 (팔굽혀펴기 총 개수, 타바타 총 분)
+function buildVolumeMap() {
+  const map = {}; // 'YYYY-MM-DD' → { pushup, tabataMin }
+  const ensure = d => (map[d] = map[d] || { pushup: 0, tabataMin: 0 });
+  getPushupLog().forEach(r => { ensure(r.date).pushup += r.count || 0; });
+  try {
+    const tlog = JSON.parse(localStorage.getItem(TABATA_LOG_KEY) || '[]');
+    tlog.forEach(r => { ensure(r.date).tabataMin += (r.durationSec || 0) / 60; });
+  } catch(_) {}
+  return map;
+}
+
+// 운동량이 많으면(팔굽혀펴기 50개 이상 또는 타바타 20분 이상) true
+function isHighVolume(vol) {
+  if (!vol) return false;
+  return vol.pushup >= 50 || vol.tabataMin >= 20;
+}
+
 function calcStreakDays(activityMap) {
   let streak = 0;
   const d = new Date();
@@ -534,6 +552,7 @@ function calcStreakDays(activityMap) {
 function renderStreakCalendar() {
   const y = streakViewYear, m = streakViewMonth;
   const actMap = buildActivityMap();
+  const volMap = buildVolumeMap();
   const todayStr = today();
 
   document.getElementById('streakMonthLabel').textContent =
@@ -564,8 +583,10 @@ function renderStreakCalendar() {
       .map(t => `<span class="streak-cell-dot streak-cell-dot--${t}"></span>`)
       .join('');
 
-    // 활동 종류 수(1~3)에 따라 GitHub streak처럼 점점 진한 초록
-    const level = Math.min(acts.size, 3);
+    // GitHub streak처럼 운동량에 따라 점점 진한 초록.
+    // 팔굽혀펴기 50개↑ 또는 타바타 20분↑ 이면 최고 단계(진하게)로.
+    let level = Math.min(acts.size, 3);
+    if (isHighVolume(volMap[dateStr])) level = 3;
     const cls = [
       'streak-cell',
       isToday  ? 'streak-cell--today'   : '',
@@ -1021,9 +1042,13 @@ function finishTabata() {
     `${tabata.settings.rounds}라운드 모두 완료했어요 💪`;
   showTabataView('done');
   document.getElementById('tabataOverlay').style.background = '';
-  // 타바타 완료 기록 저장
+  // 타바타 완료 기록 저장 (운동량 표시용으로 총 소요 시간(초)도 저장)
+  const s = tabata.settings;
+  let durationSec = 3 + s.rounds * s.exTime + Math.max(0, s.rounds - 1) * s.restTime;
+  if (s.warmupEnabled)   durationSec += s.warmupTime;
+  if (s.cooldownEnabled) durationSec += s.cooldownTime;
   const tlog = JSON.parse(localStorage.getItem(TABATA_LOG_KEY) || '[]');
-  tlog.push({ id: Date.now(), date: today(), rounds: tabata.settings.rounds });
+  tlog.push({ id: Date.now(), date: today(), rounds: s.rounds, durationSec });
   localStorage.setItem(TABATA_LOG_KEY, JSON.stringify(tlog));
   renderStreakCalendar();
 }
