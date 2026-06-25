@@ -2317,6 +2317,22 @@ input:focus {
   font-weight: 600;
 }
 
+.pushup-cam-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 20px;
+}
+
+.pushup-cam-toggle-label {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
 .pushup-log-section {
   flex: 1;
   display: flex;

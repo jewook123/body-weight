@@ -1837,6 +1837,7 @@ document.getElementById('diaryDeleteBtn').addEventListener('click', () => {
 // ── Pushup Diary ──────────────────────────────────────────────────────────────
 const PUSHUP_LOG_KEY  = 'bodyweight_pushup_log';
 const PUSHUP_GOAL_KEY = 'bodyweight_pushup_goal';
+const PUSHUP_CAM_KEY  = 'bodyweight_pushup_cam';
 
 function getPushupLog() {
   try { return JSON.parse(localStorage.getItem(PUSHUP_LOG_KEY)) || []; } catch { return []; }
@@ -1862,9 +1863,14 @@ function pushupFmtTime(ms) {
   return `${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 }
 
+function isCamAutoEnabled() {
+  return localStorage.getItem(PUSHUP_CAM_KEY) !== 'off';
+}
+
 function openPushup() {
   pushup.goal = getPushupGoal();
   document.getElementById('pushupGoalVal').textContent = pushup.goal;
+  document.getElementById('pushupCamToggle').checked = isCamAutoEnabled();
   renderPushupLog();
   showPushupView('idle');
   openOverlay('pushupOverlay');
@@ -2054,13 +2060,17 @@ function startPushupTimer() {
   document.getElementById('pushupLuxVal').textContent = '—';
   document.getElementById('pushupLuxBar').style.width = '0%';
   document.getElementById('pushupLuxThreshold').style.left = '50%';
-  updateSensorUI('카메라 연결 중...', '');
   showPushupView('running');
   pushup.intervalId = setInterval(() => {
     pushup.elapsed = Date.now() - pushup.startMs;
     document.getElementById('pushupStopwatch').textContent = pushupFmtTime(pushup.elapsed);
   }, 500);
-  startCamera();
+  const camEnabled = isCamAutoEnabled();
+  document.getElementById('pushupCamBar').style.display = camEnabled ? '' : 'none';
+  if (camEnabled) {
+    updateSensorUI('카메라 연결 중...', '');
+    startCamera();
+  }
 }
 
 function stopPushupTimer() {
@@ -2116,6 +2126,10 @@ document.getElementById('pushupSensitivity').addEventListener('input', e => {
     const pct = Math.min(100, (thr / camState.maxBright) * 100);
     document.getElementById('pushupLuxThreshold').style.left = `${pct}%`;
   }
+});
+
+document.getElementById('pushupCamToggle').addEventListener('change', e => {
+  localStorage.setItem(PUSHUP_CAM_KEY, e.target.checked ? 'on' : 'off');
 });
 
 document.getElementById('pushupStart').addEventListener('click', startPushupTimer);
