@@ -2303,19 +2303,20 @@ input:focus {
   transition: width 0.3s ease;
 }
 
-.pushup-btn-row {
-  display: flex;
-  gap: 20px;
-  align-items: center;
+.pushup-stop-btn {
+  width: 100%;
+  max-width: 320px;
+  padding: 14px;
+  font-size: 16px;
 }
 
-.pushup-minus-btn,
 .pushup-plus-btn {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  border: 3px solid;
-  font-size: 32px;
+  width: 100%;
+  max-width: 320px;
+  height: 80px;
+  border-radius: 20px;
+  border: none;
+  font-size: 44px;
   font-weight: 700;
   cursor: pointer;
   font-family: inherit;
@@ -2323,38 +2324,15 @@ input:focus {
   display: flex;
   align-items: center;
   justify-content: center;
+  background: #e11d48;
+  color: white;
+  box-shadow: 0 4px 20px rgba(225,29,72,0.35);
   transition: all 0.12s;
   user-select: none;
   -webkit-user-select: none;
 }
-
-.pushup-minus-btn {
-  background: transparent;
-  border-color: var(--border);
-  color: var(--text-secondary);
-}
-.pushup-minus-btn:hover { border-color: var(--text-secondary); }
-.pushup-minus-btn:active { transform: scale(0.92); }
-
-.pushup-plus-btn {
-  width: 96px;
-  height: 96px;
-  font-size: 44px;
-  background: #e11d48;
-  border-color: #e11d48;
-  color: white;
-  box-shadow: 0 4px 20px rgba(225,29,72,0.35);
-}
-.pushup-plus-btn:hover { background: #be123c; border-color: #be123c; }
-.pushup-plus-btn:active { transform: scale(0.92); box-shadow: none; }
-
-.pushup-stop-btn {
-  width: 100%;
-  max-width: 320px;
-  margin-top: 8px;
-  padding: 14px;
-  font-size: 16px;
-}
+.pushup-plus-btn:hover { background: #be123c; }
+.pushup-plus-btn:active { transform: scale(0.96); box-shadow: none; }
 
 /* 조도 센서 UI */
 .pushup-sensor-bar {

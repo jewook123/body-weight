@@ -2000,12 +2000,6 @@ document.getElementById('pushupPlus').addEventListener('click', () => {
   updatePushupDisplay();
 });
 
-document.getElementById('pushupMinus').addEventListener('click', () => {
-  if (pushup.count > 0) {
-    pushup.count--;
-    updatePushupDisplay();
-  }
-});
 
 document.getElementById('pushupStop').addEventListener('click', () => {
   stopPushupTimer();
