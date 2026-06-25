@@ -564,11 +564,13 @@ function renderStreakCalendar() {
       .map(t => `<span class="streak-cell-dot streak-cell-dot--${t}"></span>`)
       .join('');
 
+    // 활동 종류 수(1~3)에 따라 GitHub streak처럼 점점 진한 초록
+    const level = Math.min(acts.size, 3);
     const cls = [
       'streak-cell',
       isToday  ? 'streak-cell--today'   : '',
       isFuture ? 'streak-cell--future'  : '',
-      hasAny   ? 'streak-cell--has-activity' : '',
+      hasAny   ? `streak-cell--has-activity streak-cell--level${level}` : '',
     ].filter(Boolean).join(' ');
 
     return `<div class="${cls}" title="${dateStr}">

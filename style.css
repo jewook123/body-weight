@@ -2207,9 +2207,15 @@ input:focus {
 .streak-cell-dot--tabata   { background: #3b82f6; }
 .streak-cell-dot--exercise { background: #16a34a; }
 
-.streak-cell--has-activity {
-  background: color-mix(in srgb, #16a34a 8%, var(--bg));
+/* GitHub-style 운동량 강도 (활동 종류 수가 많을수록 진한 초록) */
+.streak-cell--has-activity { background: color-mix(in srgb, #16a34a 8%, var(--bg)); }
+.streak-cell--level1 { background: color-mix(in srgb, #16a34a 22%, var(--bg)); }
+.streak-cell--level2 { background: color-mix(in srgb, #16a34a 48%, var(--bg)); }
+.streak-cell--level3 {
+  background: color-mix(in srgb, #16a34a 80%, var(--bg));
 }
+.streak-cell--level3 .streak-cell-day { color: #fff; }
+.streak-cell--level2 .streak-cell-day { color: color-mix(in srgb, var(--text) 70%, #fff); }
 
 .streak-summary {
   display: flex;
