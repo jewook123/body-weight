@@ -457,20 +457,25 @@
 
       <!-- 운동 중 화면 -->
       <div id="pushupRunning" class="pushup-running" style="display:none">
-        <div class="pushup-stopwatch" id="pushupStopwatch">00:00</div>
-        <div class="pushup-count-wrap">
-          <div class="pushup-count" id="pushupCount">0</div>
-          <div class="pushup-goal-display" id="pushupGoalDisplay"></div>
-        </div>
-        <div class="pushup-progress-wrap">
-          <div class="pushup-progress-bar" id="pushupProgressBar" style="width:0%"></div>
+        <!-- 화면 전체 탭 영역 = 수동 +1 -->
+        <div class="pushup-tapzone" id="pushupTapzone">
+          <div class="pushup-stopwatch" id="pushupStopwatch">00:00</div>
+          <div class="pushup-count-wrap">
+            <div class="pushup-count" id="pushupCount">0</div>
+            <div class="pushup-goal-display" id="pushupGoalDisplay"></div>
+          </div>
+          <div class="pushup-progress-wrap">
+            <div class="pushup-progress-bar" id="pushupProgressBar" style="width:0%"></div>
+          </div>
+          <div class="pushup-tap-hint">화면 아무 곳이나 탭해도 +1</div>
         </div>
 
-        <!-- 조도 센서 상태 표시 -->
-        <div class="pushup-sensor-bar" id="pushupSensorBar">
-          <div class="pushup-sensor-indicator" id="pushupSensorIndicator">
+        <!-- 카메라 자동 감지 -->
+        <video id="pushupVideo" playsinline muted style="display:none"></video>
+        <div class="pushup-cam-bar" id="pushupCamBar">
+          <div class="pushup-sensor-indicator">
             <span class="pushup-sensor-dot" id="pushupSensorDot"></span>
-            <span id="pushupSensorStatus">센서 연결 중...</span>
+            <span id="pushupSensorStatus">카메라 연결 중...</span>
           </div>
           <div class="pushup-lux-row">
             <span class="pushup-lux-label">밝기</span>
@@ -488,7 +493,6 @@
         </div>
 
         <button class="pushup-stop-btn" id="pushupStop">정지 &amp; 저장</button>
-        <button class="pushup-plus-btn" id="pushupPlus">+</button>
       </div>
 
       <!-- 완료 화면 -->

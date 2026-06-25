@@ -2407,9 +2407,36 @@ input:focus {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 12px;
+  padding: 16px 20px 20px;
+  min-height: 0;
+}
+
+.pushup-tapzone {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
   gap: 12px;
-  padding: 32px 20px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  border-radius: 16px;
+  transition: background 0.1s;
+  min-height: 0;
+}
+.pushup-tapzone:active {
+  background: color-mix(in srgb, #e11d48 8%, transparent);
+}
+
+.pushup-tap-hint {
+  font-size: 13px;
+  color: var(--text-secondary);
+  opacity: 0.7;
+  margin-top: 4px;
 }
 
 .pushup-stopwatch {
@@ -2466,7 +2493,7 @@ input:focus {
 .pushup-stop-btn {
   width: 100%;
   max-width: 320px;
-  height: 36px;
+  height: 40px;
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
@@ -2477,38 +2504,15 @@ input:focus {
   cursor: pointer;
   font-family: inherit;
   transition: border-color 0.15s, color 0.15s;
+  flex-shrink: 0;
 }
 .pushup-stop-btn:hover {
   border-color: var(--negative);
   color: var(--negative);
 }
 
-.pushup-plus-btn {
-  width: 100%;
-  max-width: 320px;
-  height: 160px;
-  border-radius: 24px;
-  border: none;
-  font-size: 64px;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: inherit;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #e11d48;
-  color: white;
-  box-shadow: 0 4px 24px rgba(225,29,72,0.4);
-  transition: all 0.12s;
-  user-select: none;
-  -webkit-user-select: none;
-}
-.pushup-plus-btn:hover { background: #be123c; }
-.pushup-plus-btn:active { transform: scale(0.97); box-shadow: none; }
-
-/* 조도 센서 UI */
-.pushup-sensor-bar {
+/* 카메라 자동 감지 UI */
+.pushup-cam-bar {
   width: 100%;
   max-width: 320px;
   background: var(--card);
@@ -2518,6 +2522,7 @@ input:focus {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .pushup-sensor-indicator {

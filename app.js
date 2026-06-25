@@ -1903,122 +1903,140 @@ function renderPushupLog() {
   `).join('');
 }
 
-// ── 조도 센서 (AmbientLightSensor) ───────────────────────────────────────────
-const luxState = {
-  sensor: null,
-  baseline: null,       // 시작 시 기준 밝기
-  lastLux: null,
-  blocked: false,       // 현재 가려진 상태
-  sensitivity: 50,      // 0~100: 높을수록 더 예민 (임계값 = baseline * (1 - sensitivity/100))
+// ── 카메라 자동 감지 (밝기/움직임 변화) ──────────────────────────────────────
+// 폰을 화면이 위를 향하도록 바닥에 두면, 몸이 내려올 때 전면 카메라가 가려져
+// 화면이 어두워짐 → 다시 밝아질 때 1회 카운트. getUserMedia는 거의 모든
+// 모바일 브라우저(iOS Safari 포함)에서 동작한다.
+const camState = {
+  stream: null,
+  video: null,
+  canvas: null,
+  ctx: null,
+  rafId: null,
+  baseline: null,       // 기준 밝기 (0~255)
+  blocked: false,       // 현재 가려진(어두운) 상태
   cooldownUntil: 0,     // 연속 카운트 방지 (ms)
-  maxLux: 1,            // 막대 표시용 최대값 추적
+  maxBright: 1,         // 막대 표시용 최대값
+  active: false,
 };
 
 function getSensitivity() {
   return parseInt(document.getElementById('pushupSensitivity').value, 10);
 }
 
-function luxThresholdRatio() {
+function brightThresholdRatio() {
   // sensitivity 50% → baseline의 50% 이하로 떨어지면 감지
   return 1 - getSensitivity() / 100;
 }
 
 function updateSensorUI(status, dot) {
-  const dotEl   = document.getElementById('pushupSensorDot');
-  const statEl  = document.getElementById('pushupSensorStatus');
+  const dotEl  = document.getElementById('pushupSensorDot');
+  const statEl = document.getElementById('pushupSensorStatus');
   dotEl.className = `pushup-sensor-dot${dot ? ' ' + dot : ''}`;
   statEl.textContent = status;
 }
 
-function updateLuxBar(lux) {
-  if (lux > luxState.maxLux) luxState.maxLux = lux;
-  const pct = Math.min(100, (lux / luxState.maxLux) * 100);
+function updateBrightBar(b) {
+  if (b > camState.maxBright) camState.maxBright = b;
+  const pct = Math.min(100, (b / camState.maxBright) * 100);
   document.getElementById('pushupLuxBar').style.width = `${pct}%`;
-  document.getElementById('pushupLuxVal').textContent = lux < 10 ? lux.toFixed(1) : Math.round(lux);
-
-  // 임계선 위치
-  if (luxState.baseline !== null) {
-    const thresholdLux = luxState.baseline * luxThresholdRatio();
-    const thresholdPct = Math.min(100, (thresholdLux / luxState.maxLux) * 100);
-    document.getElementById('pushupLuxThreshold').style.left = `${thresholdPct}%`;
+  document.getElementById('pushupLuxVal').textContent = Math.round(b);
+  if (camState.baseline !== null) {
+    const thr = camState.baseline * brightThresholdRatio();
+    document.getElementById('pushupLuxThreshold').style.left =
+      `${Math.min(100, (thr / camState.maxBright) * 100)}%`;
   }
 }
 
-function onLuxReading() {
-  const lux = luxState.sensor.illuminance;
-  if (lux == null) return;
-  luxState.lastLux = lux;
-
-  // 기준값 설정 (처음 3초 평균 대신 첫 값 + 점진적 갱신)
-  if (luxState.baseline === null) {
-    luxState.baseline = lux;
-    luxState.maxLux   = Math.max(lux, 1);
-  } else if (!luxState.blocked) {
-    // 가려지지 않은 상태에서 서서히 기준값 보정 (드리프트 대응)
-    luxState.baseline = luxState.baseline * 0.97 + lux * 0.03;
+function onBrightReading(bright) {
+  if (camState.baseline === null) {
+    camState.baseline = bright;
+    camState.maxBright = Math.max(bright, 1);
+  } else if (!camState.blocked) {
+    // 가려지지 않은 상태에서 서서히 기준값 보정 (조명 드리프트 대응)
+    camState.baseline = camState.baseline * 0.97 + bright * 0.03;
   }
 
-  updateLuxBar(lux);
+  updateBrightBar(bright);
 
-  const threshold = luxState.baseline * luxThresholdRatio();
+  const threshold = camState.baseline * brightThresholdRatio();
   const now = Date.now();
 
-  if (!luxState.blocked && lux < threshold) {
-    // 가려짐 감지
-    luxState.blocked = true;
-    updateSensorUI('가리는 중... ↓', 'blocked');
-  } else if (luxState.blocked && lux >= threshold) {
-    // 밝아짐 → 1회 카운트 (쿨다운 300ms)
-    luxState.blocked = false;
-    if (now > luxState.cooldownUntil) {
-      luxState.cooldownUntil = now + 300;
+  if (!camState.blocked && bright < threshold) {
+    camState.blocked = true;
+    updateSensorUI('내려가는 중... ↓', 'blocked');
+  } else if (camState.blocked && bright >= threshold) {
+    camState.blocked = false;
+    if (now > camState.cooldownUntil) {
+      camState.cooldownUntil = now + 400;
       pushup.count++;
       updatePushupDisplay();
       beep(880, 0.08, 0.3);
     }
     updateSensorUI('감지 중 ✓', 'active');
-  } else if (!luxState.blocked) {
+  } else if (!camState.blocked) {
     updateSensorUI('감지 중', 'active');
   }
 }
 
-async function startLuxSensor() {
-  // AmbientLightSensor 지원 확인
-  if (!('AmbientLightSensor' in window)) {
-    updateSensorUI('이 브라우저는 조도 센서 미지원 — 직접 입력 사용', 'error');
+function sampleBrightnessLoop() {
+  if (!camState.active) return;
+  const v = camState.video;
+  if (v && v.readyState >= 2) {
+    try {
+      const { canvas, ctx } = camState;
+      ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+      const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      let sum = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        sum += (data[i] + data[i + 1] + data[i + 2]) / 3;
+      }
+      onBrightReading(sum / (data.length / 4));
+    } catch (_) {}
+  }
+  camState.rafId = requestAnimationFrame(sampleBrightnessLoop);
+}
+
+async function startCamera() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    updateSensorUI('카메라 미지원 — 화면을 탭해서 카운트', 'error');
     return;
   }
-
   try {
-    const perm = await navigator.permissions.query({ name: 'ambient-light-sensor' });
-    if (perm.state === 'denied') {
-      updateSensorUI('센서 권한 거부됨 — 직접 입력 사용', 'error');
-      return;
-    }
-  } catch(_) { /* permissions query 미지원 브라우저는 그냥 시도 */ }
-
-  try {
-    luxState.sensor   = new AmbientLightSensor({ frequency: 10 });
-    luxState.baseline = null;
-    luxState.blocked  = false;
-    luxState.maxLux   = 1;
-
-    luxState.sensor.addEventListener('reading', onLuxReading);
-    luxState.sensor.addEventListener('error', e => {
-      updateSensorUI(`센서 오류: ${e.error?.message ?? '알 수 없음'} — 직접 입력 사용`, 'error');
+    camState.stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 240 } },
+      audio: false,
     });
-    luxState.sensor.start();
-    updateSensorUI('센서 시작 중...', '');
-  } catch(e) {
-    updateSensorUI(`센서를 열 수 없음 — 직접 입력 사용`, 'error');
+    const v = document.getElementById('pushupVideo');
+    v.srcObject = camState.stream;
+    v.setAttribute('playsinline', '');
+    await v.play();
+    camState.video  = v;
+    camState.canvas = document.createElement('canvas');
+    camState.canvas.width  = 32;
+    camState.canvas.height = 24;
+    camState.ctx = camState.canvas.getContext('2d', { willReadFrequently: true });
+    camState.baseline  = null;
+    camState.blocked   = false;
+    camState.maxBright = 1;
+    camState.active    = true;
+    updateSensorUI('감지 중', 'active');
+    camState.rafId = requestAnimationFrame(sampleBrightnessLoop);
+  } catch (e) {
+    updateSensorUI('카메라 권한 거부 — 화면을 탭해서 카운트', 'error');
   }
 }
 
-function stopLuxSensor() {
-  if (luxState.sensor) {
-    try { luxState.sensor.stop(); } catch(_) {}
-    luxState.sensor = null;
+function stopCamera() {
+  camState.active = false;
+  if (camState.rafId) { cancelAnimationFrame(camState.rafId); camState.rafId = null; }
+  if (camState.stream) {
+    camState.stream.getTracks().forEach(t => { try { t.stop(); } catch (_) {} });
+    camState.stream = null;
   }
+  const v = document.getElementById('pushupVideo');
+  if (v) v.srcObject = null;
+  camState.video = null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2036,12 +2054,13 @@ function startPushupTimer() {
   document.getElementById('pushupLuxVal').textContent = '—';
   document.getElementById('pushupLuxBar').style.width = '0%';
   document.getElementById('pushupLuxThreshold').style.left = '50%';
+  updateSensorUI('카메라 연결 중...', '');
   showPushupView('running');
   pushup.intervalId = setInterval(() => {
     pushup.elapsed = Date.now() - pushup.startMs;
     document.getElementById('pushupStopwatch').textContent = pushupFmtTime(pushup.elapsed);
   }, 500);
-  startLuxSensor();
+  startCamera();
 }
 
 function stopPushupTimer() {
@@ -2049,7 +2068,7 @@ function stopPushupTimer() {
     clearInterval(pushup.intervalId);
     pushup.intervalId = null;
   }
-  stopLuxSensor();
+  stopCamera();
 }
 
 function savePushupEntry() {
@@ -2092,16 +2111,17 @@ document.getElementById('pushupGoalInc').addEventListener('click', () => {
 document.getElementById('pushupSensitivity').addEventListener('input', e => {
   document.getElementById('pushupSensitivityVal').textContent = `${e.target.value}%`;
   // 임계선 위치 즉시 업데이트
-  if (luxState.baseline !== null && luxState.maxLux > 0) {
-    const thresholdLux = luxState.baseline * luxThresholdRatio();
-    const pct = Math.min(100, (thresholdLux / luxState.maxLux) * 100);
+  if (camState.baseline !== null && camState.maxBright > 0) {
+    const thr = camState.baseline * brightThresholdRatio();
+    const pct = Math.min(100, (thr / camState.maxBright) * 100);
     document.getElementById('pushupLuxThreshold').style.left = `${pct}%`;
   }
 });
 
 document.getElementById('pushupStart').addEventListener('click', startPushupTimer);
 
-document.getElementById('pushupPlus').addEventListener('click', () => {
+// 화면 전체 탭 = 수동 +1 (카메라가 안 되거나 보정용)
+document.getElementById('pushupTapzone').addEventListener('click', () => {
   pushup.count++;
   updatePushupDisplay();
 });
