@@ -1728,6 +1728,176 @@ document.getElementById('diaryDeleteBtn').addEventListener('click', () => {
   showDiaryList();
 });
 
+// ── Pushup Diary ──────────────────────────────────────────────────────────────
+const PUSHUP_LOG_KEY  = 'bodyweight_pushup_log';
+const PUSHUP_GOAL_KEY = 'bodyweight_pushup_goal';
+
+function getPushupLog() {
+  try { return JSON.parse(localStorage.getItem(PUSHUP_LOG_KEY)) || []; } catch { return []; }
+}
+function savePushupLog(arr) { localStorage.setItem(PUSHUP_LOG_KEY, JSON.stringify(arr)); }
+function getPushupGoal() {
+  const v = localStorage.getItem(PUSHUP_GOAL_KEY);
+  return v !== null ? parseInt(v, 10) : 30;
+}
+function savePushupGoalPref(v) { localStorage.setItem(PUSHUP_GOAL_KEY, String(v)); }
+
+const pushup = {
+  goal: 30,
+  count: 0,
+  startMs: 0,
+  elapsed: 0,
+  intervalId: null,
+};
+
+function pushupFmtTime(ms) {
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  return `${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function openPushup() {
+  pushup.goal = getPushupGoal();
+  document.getElementById('pushupGoalVal').textContent = pushup.goal;
+  renderPushupLog();
+  showPushupView('idle');
+  openOverlay('pushupOverlay');
+}
+
+function closePushup() {
+  stopPushupTimer();
+  closeOverlay('pushupOverlay');
+}
+
+function showPushupView(view) {
+  document.getElementById('pushupIdle').style.display    = view === 'idle'    ? 'flex' : 'none';
+  document.getElementById('pushupRunning').style.display = view === 'running' ? 'flex' : 'none';
+  document.getElementById('pushupDone').style.display    = view === 'done'    ? 'flex' : 'none';
+}
+
+function renderPushupLog() {
+  const log = getPushupLog();
+  const list = document.getElementById('pushupLogList');
+  document.getElementById('pushupLogCount').textContent = log.length ? `${log.length}개` : '';
+  if (!log.length) {
+    list.innerHTML = '<p class="pushup-log-empty">아직 기록이 없어요. 지금 시작해보세요!</p>';
+    return;
+  }
+  const sorted = [...log].sort((a, b) => b.date.localeCompare(a.date));
+  list.innerHTML = sorted.map(item => `
+    <div class="pushup-log-item">
+      <span class="pushup-log-date">${formatDateFull(item.date)}</span>
+      <span>
+        <span class="pushup-log-count">${item.count}</span>
+        <span class="pushup-log-unit">개</span>
+      </span>
+      <span class="pushup-log-time">${pushupFmtTime(item.duration || 0)}</span>
+      <button class="pushup-log-delete" data-id="${item.id}">×</button>
+    </div>
+  `).join('');
+}
+
+function startPushupTimer() {
+  pushup.count   = 0;
+  pushup.startMs = Date.now();
+  pushup.elapsed = 0;
+  document.getElementById('pushupCount').textContent = '0';
+  document.getElementById('pushupStopwatch').textContent = '00:00';
+  document.getElementById('pushupProgressBar').style.width = '0%';
+  document.getElementById('pushupGoalDisplay').textContent = `목표 ${pushup.goal}개`;
+  showPushupView('running');
+  pushup.intervalId = setInterval(() => {
+    pushup.elapsed = Date.now() - pushup.startMs;
+    document.getElementById('pushupStopwatch').textContent = pushupFmtTime(pushup.elapsed);
+  }, 500);
+}
+
+function stopPushupTimer() {
+  if (pushup.intervalId) {
+    clearInterval(pushup.intervalId);
+    pushup.intervalId = null;
+  }
+}
+
+function savePushupEntry() {
+  const log = getPushupLog();
+  log.push({ id: Date.now(), date: today(), count: pushup.count, duration: pushup.elapsed, goal: pushup.goal });
+  savePushupLog(log);
+}
+
+function updatePushupDisplay() {
+  const countEl = document.getElementById('pushupCount');
+  countEl.textContent = pushup.count;
+  const pct = pushup.goal > 0 ? Math.min(100, Math.round((pushup.count / pushup.goal) * 100)) : 0;
+  document.getElementById('pushupProgressBar').style.width = `${pct}%`;
+  document.getElementById('pushupGoalDisplay').textContent = `목표 ${pushup.goal}개 (${pct}%)`;
+
+  // pop animation
+  countEl.classList.remove('pop');
+  void countEl.offsetWidth;
+  countEl.classList.add('pop');
+  setTimeout(() => countEl.classList.remove('pop'), 150);
+
+  if (pushup.count >= pushup.goal && pushup.goal > 0) {
+    beep(880, 0.15, 0.4);
+    showToast(`목표 ${pushup.goal}개 달성! 🎉`);
+  }
+}
+
+// Goal stepper
+document.getElementById('pushupGoalDec').addEventListener('click', () => {
+  pushup.goal = Math.max(1, pushup.goal - 5);
+  document.getElementById('pushupGoalVal').textContent = pushup.goal;
+  savePushupGoalPref(pushup.goal);
+});
+document.getElementById('pushupGoalInc').addEventListener('click', () => {
+  pushup.goal = Math.min(999, pushup.goal + 5);
+  document.getElementById('pushupGoalVal').textContent = pushup.goal;
+  savePushupGoalPref(pushup.goal);
+});
+
+document.getElementById('pushupStart').addEventListener('click', startPushupTimer);
+
+document.getElementById('pushupPlus').addEventListener('click', () => {
+  pushup.count++;
+  updatePushupDisplay();
+});
+
+document.getElementById('pushupMinus').addEventListener('click', () => {
+  if (pushup.count > 0) {
+    pushup.count--;
+    updatePushupDisplay();
+  }
+});
+
+document.getElementById('pushupStop').addEventListener('click', () => {
+  stopPushupTimer();
+  savePushupEntry();
+  document.getElementById('pushupDoneCount').textContent = `${pushup.count}개`;
+  document.getElementById('pushupDoneTime').textContent  = pushupFmtTime(pushup.elapsed);
+  showPushupView('done');
+  soundDone();
+});
+
+document.getElementById('pushupDoneBack').addEventListener('click', () => {
+  renderPushupLog();
+  showPushupView('idle');
+});
+
+document.getElementById('pushupFab').addEventListener('click', openPushup);
+document.getElementById('pushupClose').addEventListener('click', closePushup);
+document.getElementById('pushupOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('pushupOverlay')) closePushup();
+});
+
+document.getElementById('pushupLogList').addEventListener('click', e => {
+  const btn = e.target.closest('.pushup-log-delete');
+  if (!btn) return;
+  const log = getPushupLog().filter(item => item.id !== parseInt(btn.dataset.id, 10));
+  savePushupLog(log);
+  renderPushupLog();
+});
+
 // Init
 applyTheme(localStorage.getItem(THEME_KEY) || 'light');
 document.getElementById('date').value = today();

@@ -237,6 +237,9 @@
   <!-- Emotion Diary FAB -->
   <button class="diary-fab" id="diaryFab">📔</button>
 
+  <!-- Pushup FAB -->
+  <button class="pushup-fab" id="pushupFab">💪</button>
+
   <!-- Emotion Diary Overlay -->
   <div class="diary-overlay" id="diaryOverlay">
     <div class="diary-panel">
@@ -398,6 +401,61 @@
         <div class="tabata-done-text">완료!</div>
         <p class="tabata-done-sub" id="tabataDoneSub"></p>
         <button class="tabata-action-btn" id="tabataAgain">다시 하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pushup Diary Overlay -->
+  <div class="pushup-overlay" id="pushupOverlay">
+    <div class="pushup-panel">
+      <div class="pushup-header">
+        <h2>💪 팔굽혀펴기 일지</h2>
+        <button class="close-fs-btn" id="pushupClose">✕</button>
+      </div>
+
+      <!-- 설정/목록 화면 -->
+      <div id="pushupIdle" class="pushup-idle">
+        <div class="pushup-goal-section">
+          <span class="pushup-goal-label">목표 횟수</span>
+          <div class="tabata-stepper">
+            <button class="stepper-btn" id="pushupGoalDec">−</button>
+            <span class="stepper-val"><span id="pushupGoalVal">30</span><span class="stepper-unit">개</span></span>
+            <button class="stepper-btn" id="pushupGoalInc">+</button>
+          </div>
+        </div>
+        <button class="tabata-action-btn" id="pushupStart">시작</button>
+        <div class="pushup-log-section">
+          <div class="pushup-log-header">
+            <span class="pushup-log-title">기록</span>
+            <span class="records-count" id="pushupLogCount"></span>
+          </div>
+          <div id="pushupLogList" class="pushup-log-list"></div>
+        </div>
+      </div>
+
+      <!-- 운동 중 화면 -->
+      <div id="pushupRunning" class="pushup-running" style="display:none">
+        <div class="pushup-stopwatch" id="pushupStopwatch">00:00</div>
+        <div class="pushup-count-wrap">
+          <div class="pushup-count" id="pushupCount">0</div>
+          <div class="pushup-goal-display" id="pushupGoalDisplay"></div>
+        </div>
+        <div class="pushup-progress-wrap">
+          <div class="pushup-progress-bar" id="pushupProgressBar" style="width:0%"></div>
+        </div>
+        <div class="pushup-btn-row">
+          <button class="pushup-minus-btn" id="pushupMinus">−</button>
+          <button class="pushup-plus-btn" id="pushupPlus">+</button>
+        </div>
+        <button class="tabata-ctrl-btn tabata-ctrl-btn--secondary pushup-stop-btn" id="pushupStop">정지 &amp; 저장</button>
+      </div>
+
+      <!-- 완료 화면 -->
+      <div id="pushupDone" class="pushup-done" style="display:none">
+        <div class="pushup-done-emoji">🎉</div>
+        <div class="pushup-done-count" id="pushupDoneCount">0개</div>
+        <div class="pushup-done-time" id="pushupDoneTime"></div>
+        <button class="tabata-action-btn" id="pushupDoneBack">확인</button>
       </div>
     </div>
   </div>
