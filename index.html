@@ -19,6 +19,28 @@
     </header>
     <input type="file" id="importFile" accept=".json" style="display:none">
 
+    <!-- Streak Calendar -->
+    <div class="card streak-card" id="streakCard">
+      <div class="streak-header">
+        <h2>운동 캘린더</h2>
+        <div class="streak-nav">
+          <button class="streak-nav-btn" id="streakPrev">‹</button>
+          <span class="streak-month-label" id="streakMonthLabel"></span>
+          <button class="streak-nav-btn" id="streakNext">›</button>
+        </div>
+      </div>
+      <div class="streak-legend">
+        <span class="streak-legend-item"><span class="streak-dot streak-dot--pushup"></span>팔굽혀펴기</span>
+        <span class="streak-legend-item"><span class="streak-dot streak-dot--tabata"></span>타바타</span>
+        <span class="streak-legend-item"><span class="streak-dot streak-dot--exercise"></span>운동기록</span>
+      </div>
+      <div class="streak-weekdays">
+        <span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span>
+      </div>
+      <div class="streak-grid" id="streakGrid"></div>
+      <div class="streak-summary" id="streakSummary"></div>
+    </div>
+
     <div class="stats">
       <div class="stat-card">
         <span class="stat-label">현재 체중</span>

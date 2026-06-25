@@ -4,6 +4,7 @@ const THEME_KEY = 'bodyweight_theme';
 const CHECKS_KEY = 'bodyweight_daily_checks';
 const MISSION_CFG_KEY = 'bodyweight_mission_cfg';
 const DIARY_KEY = 'bodyweight_diary';
+const TABATA_LOG_KEY = 'bodyweight_tabata_log';
 
 let currentPeriod = '3m';
 
@@ -499,12 +500,123 @@ function updateMissions() {
   });
 }
 
+// ── Streak Calendar ──────────────────────────────────────────────────────────
+let streakViewYear  = new Date().getFullYear();
+let streakViewMonth = new Date().getMonth(); // 0-based
+
+function buildActivityMap() {
+  const map = {}; // 'YYYY-MM-DD' → Set of 'pushup'|'tabata'|'exercise'
+  const add = (date, type) => {
+    if (!map[date]) map[date] = new Set();
+    map[date].add(type);
+  };
+  getPushupLog().forEach(r => add(r.date, 'pushup'));
+  try {
+    const tlog = JSON.parse(localStorage.getItem(TABATA_LOG_KEY) || '[]');
+    tlog.forEach(r => add(r.date, 'tabata'));
+  } catch(_) {}
+  getRecords().filter(r => r.exercise).forEach(r => add(r.date, 'exercise'));
+  return map;
+}
+
+function calcStreakDays(activityMap) {
+  let streak = 0;
+  const d = new Date();
+  // 오늘 활동 없으면 어제부터 체크
+  if (!activityMap[toISODate(d)]) d.setDate(d.getDate() - 1);
+  for (let i = 0; i < 365; i++) {
+    if (activityMap[toISODate(d)]) { streak++; d.setDate(d.getDate() - 1); }
+    else break;
+  }
+  return streak;
+}
+
+function renderStreakCalendar() {
+  const y = streakViewYear, m = streakViewMonth;
+  const actMap = buildActivityMap();
+  const todayStr = today();
+
+  document.getElementById('streakMonthLabel').textContent =
+    `${y}년 ${m + 1}월`;
+
+  // 이번 달 첫날 요일 (월=0 … 일=6)
+  const firstDay  = new Date(y, m, 1);
+  const startDow  = (firstDay.getDay() + 6) % 7;
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+
+  const cells = [];
+  // 앞 빈칸
+  for (let i = 0; i < startDow; i++) cells.push(null);
+  // 날짜
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  const grid = document.getElementById('streakGrid');
+  grid.innerHTML = cells.map(d => {
+    if (d === null) return '<div class="streak-cell streak-cell--empty"></div>';
+    const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const acts    = actMap[dateStr] || new Set();
+    const isToday  = dateStr === todayStr;
+    const isFuture = dateStr > todayStr;
+    const hasAny   = acts.size > 0;
+
+    const dots = ['pushup','tabata','exercise']
+      .filter(t => acts.has(t))
+      .map(t => `<span class="streak-cell-dot streak-cell-dot--${t}"></span>`)
+      .join('');
+
+    const cls = [
+      'streak-cell',
+      isToday  ? 'streak-cell--today'   : '',
+      isFuture ? 'streak-cell--future'  : '',
+      hasAny   ? 'streak-cell--has-activity' : '',
+    ].filter(Boolean).join(' ');
+
+    return `<div class="${cls}" title="${dateStr}">
+      <span class="streak-cell-day">${d}</span>
+      <div class="streak-cell-dots">${dots}</div>
+    </div>`;
+  }).join('');
+
+  // 요약 통계
+  const streak = calcStreakDays(actMap);
+  const monthDates = Object.keys(actMap).filter(k => k.startsWith(`${y}-${String(m+1).padStart(2,'0')}`));
+  const monthActive = monthDates.length;
+  const totalDays   = Object.keys(actMap).length;
+
+  document.getElementById('streakSummary').innerHTML = `
+    <div class="streak-stat">
+      <span class="streak-stat-val">${streak}</span>
+      <span class="streak-stat-label">연속 운동일</span>
+    </div>
+    <div class="streak-stat">
+      <span class="streak-stat-val">${monthActive}</span>
+      <span class="streak-stat-label">이번 달 활동일</span>
+    </div>
+    <div class="streak-stat">
+      <span class="streak-stat-val">${totalDays}</span>
+      <span class="streak-stat-label">누적 활동일</span>
+    </div>
+  `;
+}
+
+document.getElementById('streakPrev').addEventListener('click', () => {
+  streakViewMonth--;
+  if (streakViewMonth < 0) { streakViewMonth = 11; streakViewYear--; }
+  renderStreakCalendar();
+});
+document.getElementById('streakNext').addEventListener('click', () => {
+  streakViewMonth++;
+  if (streakViewMonth > 11) { streakViewMonth = 0; streakViewYear++; }
+  renderStreakCalendar();
+});
+
 function render() {
   const records = getRecords();
   updateStats(records);
   updateChart(records, currentPeriod);
   renderRecords(records);
   updateMissions();
+  renderStreakCalendar();
 }
 
 // Export
@@ -907,17 +1019,11 @@ function finishTabata() {
     `${tabata.settings.rounds}라운드 모두 완료했어요 💪`;
   showTabataView('done');
   document.getElementById('tabataOverlay').style.background = '';
-}
-
-function finishTabata() {
-  stopTabataTimer();
-  tabata.phase = 'done';
-  soundDone();
-  setTimeout(speakDone, 700);
-  document.getElementById('tabataDoneSub').textContent =
-    `${tabata.settings.rounds}라운드 모두 완료했어요 💪`;
-  showTabataView('done');
-  document.getElementById('tabataOverlay').style.background = '';
+  // 타바타 완료 기록 저장
+  const tlog = JSON.parse(localStorage.getItem(TABATA_LOG_KEY) || '[]');
+  tlog.push({ id: Date.now(), date: today(), rounds: tabata.settings.rounds });
+  localStorage.setItem(TABATA_LOG_KEY, JSON.stringify(tlog));
+  renderStreakCalendar();
 }
 
 function tickTabata() {
@@ -2008,6 +2114,7 @@ document.getElementById('pushupStop').addEventListener('click', () => {
   document.getElementById('pushupDoneTime').textContent  = pushupFmtTime(pushup.elapsed);
   showPushupView('done');
   soundDone();
+  renderStreakCalendar();
 });
 
 document.getElementById('pushupDoneBack').addEventListener('click', () => {

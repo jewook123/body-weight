@@ -2076,6 +2076,166 @@ input:focus {
   color: white;
 }
 
+/* ── Streak Calendar ──────────────────────────────────────────────────────── */
+
+.streak-card { padding: 20px 20px 16px; }
+
+.streak-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.streak-header h2 { margin-bottom: 0; }
+
+.streak-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.streak-nav-btn {
+  background: transparent;
+  border: 1.5px solid var(--border);
+  color: var(--text-secondary);
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  font-family: inherit;
+  line-height: 1;
+}
+.streak-nav-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+.streak-month-label {
+  font-size: 14px;
+  font-weight: 700;
+  min-width: 72px;
+  text-align: center;
+}
+
+.streak-legend {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.streak-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.streak-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.streak-dot--pushup   { background: #e11d48; }
+.streak-dot--tabata   { background: #3b82f6; }
+.streak-dot--exercise { background: #16a34a; }
+
+.streak-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+}
+.streak-weekdays span {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  padding: 2px 0;
+}
+
+.streak-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.streak-cell {
+  aspect-ratio: 1;
+  border-radius: 6px;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 3px 2px 2px;
+  position: relative;
+  min-width: 0;
+  cursor: default;
+  transition: background 0.15s;
+}
+.streak-cell--empty { visibility: hidden; }
+.streak-cell--today {
+  background: color-mix(in srgb, var(--primary) 12%, var(--bg));
+  outline: 1.5px solid var(--primary);
+  outline-offset: -1.5px;
+}
+.streak-cell--future { opacity: 0.35; }
+
+.streak-cell-day {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  line-height: 1;
+  margin-bottom: 3px;
+}
+.streak-cell--today .streak-cell-day { color: var(--primary); }
+
+.streak-cell-dots {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.streak-cell-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.streak-cell-dot--pushup   { background: #e11d48; }
+.streak-cell-dot--tabata   { background: #3b82f6; }
+.streak-cell-dot--exercise { background: #16a34a; }
+
+.streak-cell--has-activity {
+  background: color-mix(in srgb, #16a34a 8%, var(--bg));
+}
+
+.streak-summary {
+  display: flex;
+  gap: 16px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.streak-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.streak-stat-val {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--primary);
+}
+.streak-stat-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
 /* ── Pushup Diary ──────────────────────────────────────────────────────────── */
 
 .pushup-fab {
