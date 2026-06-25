@@ -2306,17 +2306,18 @@ input:focus {
 .pushup-stop-btn {
   width: 100%;
   max-width: 320px;
-  padding: 14px;
-  font-size: 16px;
+  height: 80px;
+  border-radius: 20px;
+  font-size: 20px;
 }
 
 .pushup-plus-btn {
   width: 100%;
   max-width: 320px;
-  height: 80px;
-  border-radius: 20px;
+  height: 52px;
+  border-radius: 12px;
   border: none;
-  font-size: 44px;
+  font-size: 28px;
   font-weight: 700;
   cursor: pointer;
   font-family: inherit;
