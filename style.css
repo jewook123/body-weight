@@ -2306,18 +2306,19 @@ input:focus {
 .pushup-stop-btn {
   width: 100%;
   max-width: 320px;
-  height: 80px;
-  border-radius: 20px;
-  font-size: 20px;
+  height: 44px;
+  border-radius: 10px;
+  font-size: 14px;
+  padding: 0;
 }
 
 .pushup-plus-btn {
   width: 100%;
   max-width: 320px;
-  height: 52px;
-  border-radius: 12px;
+  height: 160px;
+  border-radius: 24px;
   border: none;
-  font-size: 28px;
+  font-size: 64px;
   font-weight: 700;
   cursor: pointer;
   font-family: inherit;
@@ -2327,13 +2328,13 @@ input:focus {
   justify-content: center;
   background: #e11d48;
   color: white;
-  box-shadow: 0 4px 20px rgba(225,29,72,0.35);
+  box-shadow: 0 4px 24px rgba(225,29,72,0.4);
   transition: all 0.12s;
   user-select: none;
   -webkit-user-select: none;
 }
 .pushup-plus-btn:hover { background: #be123c; }
-.pushup-plus-btn:active { transform: scale(0.96); box-shadow: none; }
+.pushup-plus-btn:active { transform: scale(0.97); box-shadow: none; }
 
 /* 조도 센서 UI */
 .pushup-sensor-bar {
