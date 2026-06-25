@@ -2356,6 +2356,105 @@ input:focus {
   font-size: 16px;
 }
 
+/* 조도 센서 UI */
+.pushup-sensor-bar {
+  width: 100%;
+  max-width: 320px;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pushup-sensor-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.pushup-sensor-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border);
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.pushup-sensor-dot.active   { background: #16a34a; box-shadow: 0 0 6px #16a34a88; }
+.pushup-sensor-dot.blocked  { background: #e11d48; box-shadow: 0 0 6px #e11d4888; }
+.pushup-sensor-dot.error    { background: #f97316; }
+
+.pushup-lux-row,
+.pushup-sensitivity-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pushup-lux-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  width: 28px;
+  flex-shrink: 0;
+}
+
+.pushup-lux-bar-wrap {
+  flex: 1;
+  height: 8px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: visible;
+  position: relative;
+}
+
+.pushup-lux-bar {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #1d4ed8, #facc15, #ef4444);
+  transition: width 0.15s ease;
+  max-width: 100%;
+}
+
+.pushup-lux-threshold {
+  position: absolute;
+  top: -3px;
+  width: 3px;
+  height: 14px;
+  background: #e11d48;
+  border-radius: 2px;
+  transition: left 0.2s;
+}
+
+.pushup-lux-val {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  width: 40px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.pushup-sensitivity-slider {
+  flex: 1;
+  accent-color: #e11d48;
+  cursor: pointer;
+}
+
+.pushup-sensitivity-val {
+  font-size: 11px;
+  color: var(--text-secondary);
+  width: 32px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
 /* done */
 .pushup-done {
   flex: 1;

@@ -1797,6 +1797,126 @@ function renderPushupLog() {
   `).join('');
 }
 
+// ── 조도 센서 (AmbientLightSensor) ───────────────────────────────────────────
+const luxState = {
+  sensor: null,
+  baseline: null,       // 시작 시 기준 밝기
+  lastLux: null,
+  blocked: false,       // 현재 가려진 상태
+  sensitivity: 50,      // 0~100: 높을수록 더 예민 (임계값 = baseline * (1 - sensitivity/100))
+  cooldownUntil: 0,     // 연속 카운트 방지 (ms)
+  maxLux: 1,            // 막대 표시용 최대값 추적
+};
+
+function getSensitivity() {
+  return parseInt(document.getElementById('pushupSensitivity').value, 10);
+}
+
+function luxThresholdRatio() {
+  // sensitivity 50% → baseline의 50% 이하로 떨어지면 감지
+  return 1 - getSensitivity() / 100;
+}
+
+function updateSensorUI(status, dot) {
+  const dotEl   = document.getElementById('pushupSensorDot');
+  const statEl  = document.getElementById('pushupSensorStatus');
+  dotEl.className = `pushup-sensor-dot${dot ? ' ' + dot : ''}`;
+  statEl.textContent = status;
+}
+
+function updateLuxBar(lux) {
+  if (lux > luxState.maxLux) luxState.maxLux = lux;
+  const pct = Math.min(100, (lux / luxState.maxLux) * 100);
+  document.getElementById('pushupLuxBar').style.width = `${pct}%`;
+  document.getElementById('pushupLuxVal').textContent = lux < 10 ? lux.toFixed(1) : Math.round(lux);
+
+  // 임계선 위치
+  if (luxState.baseline !== null) {
+    const thresholdLux = luxState.baseline * luxThresholdRatio();
+    const thresholdPct = Math.min(100, (thresholdLux / luxState.maxLux) * 100);
+    document.getElementById('pushupLuxThreshold').style.left = `${thresholdPct}%`;
+  }
+}
+
+function onLuxReading() {
+  const lux = luxState.sensor.illuminance;
+  if (lux == null) return;
+  luxState.lastLux = lux;
+
+  // 기준값 설정 (처음 3초 평균 대신 첫 값 + 점진적 갱신)
+  if (luxState.baseline === null) {
+    luxState.baseline = lux;
+    luxState.maxLux   = Math.max(lux, 1);
+  } else if (!luxState.blocked) {
+    // 가려지지 않은 상태에서 서서히 기준값 보정 (드리프트 대응)
+    luxState.baseline = luxState.baseline * 0.97 + lux * 0.03;
+  }
+
+  updateLuxBar(lux);
+
+  const threshold = luxState.baseline * luxThresholdRatio();
+  const now = Date.now();
+
+  if (!luxState.blocked && lux < threshold) {
+    // 가려짐 감지
+    luxState.blocked = true;
+    updateSensorUI('가리는 중... ↓', 'blocked');
+  } else if (luxState.blocked && lux >= threshold) {
+    // 밝아짐 → 1회 카운트 (쿨다운 300ms)
+    luxState.blocked = false;
+    if (now > luxState.cooldownUntil) {
+      luxState.cooldownUntil = now + 300;
+      pushup.count++;
+      updatePushupDisplay();
+      beep(880, 0.08, 0.3);
+    }
+    updateSensorUI('감지 중 ✓', 'active');
+  } else if (!luxState.blocked) {
+    updateSensorUI('감지 중', 'active');
+  }
+}
+
+async function startLuxSensor() {
+  // AmbientLightSensor 지원 확인
+  if (!('AmbientLightSensor' in window)) {
+    updateSensorUI('이 브라우저는 조도 센서 미지원 — 직접 입력 사용', 'error');
+    return;
+  }
+
+  try {
+    const perm = await navigator.permissions.query({ name: 'ambient-light-sensor' });
+    if (perm.state === 'denied') {
+      updateSensorUI('센서 권한 거부됨 — 직접 입력 사용', 'error');
+      return;
+    }
+  } catch(_) { /* permissions query 미지원 브라우저는 그냥 시도 */ }
+
+  try {
+    luxState.sensor   = new AmbientLightSensor({ frequency: 10 });
+    luxState.baseline = null;
+    luxState.blocked  = false;
+    luxState.maxLux   = 1;
+
+    luxState.sensor.addEventListener('reading', onLuxReading);
+    luxState.sensor.addEventListener('error', e => {
+      updateSensorUI(`센서 오류: ${e.error?.message ?? '알 수 없음'} — 직접 입력 사용`, 'error');
+    });
+    luxState.sensor.start();
+    updateSensorUI('센서 시작 중...', '');
+  } catch(e) {
+    updateSensorUI(`센서를 열 수 없음 — 직접 입력 사용`, 'error');
+  }
+}
+
+function stopLuxSensor() {
+  if (luxState.sensor) {
+    try { luxState.sensor.stop(); } catch(_) {}
+    luxState.sensor = null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function startPushupTimer() {
   pushup.count   = 0;
   pushup.startMs = Date.now();
@@ -1805,11 +1925,17 @@ function startPushupTimer() {
   document.getElementById('pushupStopwatch').textContent = '00:00';
   document.getElementById('pushupProgressBar').style.width = '0%';
   document.getElementById('pushupGoalDisplay').textContent = `목표 ${pushup.goal}개`;
+  document.getElementById('pushupSensitivity').value = 50;
+  document.getElementById('pushupSensitivityVal').textContent = '50%';
+  document.getElementById('pushupLuxVal').textContent = '—';
+  document.getElementById('pushupLuxBar').style.width = '0%';
+  document.getElementById('pushupLuxThreshold').style.left = '50%';
   showPushupView('running');
   pushup.intervalId = setInterval(() => {
     pushup.elapsed = Date.now() - pushup.startMs;
     document.getElementById('pushupStopwatch').textContent = pushupFmtTime(pushup.elapsed);
   }, 500);
+  startLuxSensor();
 }
 
 function stopPushupTimer() {
@@ -1817,6 +1943,7 @@ function stopPushupTimer() {
     clearInterval(pushup.intervalId);
     pushup.intervalId = null;
   }
+  stopLuxSensor();
 }
 
 function savePushupEntry() {
@@ -1854,6 +1981,16 @@ document.getElementById('pushupGoalInc').addEventListener('click', () => {
   pushup.goal = Math.min(999, pushup.goal + 5);
   document.getElementById('pushupGoalVal').textContent = pushup.goal;
   savePushupGoalPref(pushup.goal);
+});
+
+document.getElementById('pushupSensitivity').addEventListener('input', e => {
+  document.getElementById('pushupSensitivityVal').textContent = `${e.target.value}%`;
+  // 임계선 위치 즉시 업데이트
+  if (luxState.baseline !== null && luxState.maxLux > 0) {
+    const thresholdLux = luxState.baseline * luxThresholdRatio();
+    const pct = Math.min(100, (thresholdLux / luxState.maxLux) * 100);
+    document.getElementById('pushupLuxThreshold').style.left = `${pct}%`;
+  }
 });
 
 document.getElementById('pushupStart').addEventListener('click', startPushupTimer);

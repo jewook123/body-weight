@@ -443,6 +443,28 @@
         <div class="pushup-progress-wrap">
           <div class="pushup-progress-bar" id="pushupProgressBar" style="width:0%"></div>
         </div>
+
+        <!-- 조도 센서 상태 표시 -->
+        <div class="pushup-sensor-bar" id="pushupSensorBar">
+          <div class="pushup-sensor-indicator" id="pushupSensorIndicator">
+            <span class="pushup-sensor-dot" id="pushupSensorDot"></span>
+            <span id="pushupSensorStatus">센서 연결 중...</span>
+          </div>
+          <div class="pushup-lux-row">
+            <span class="pushup-lux-label">밝기</span>
+            <div class="pushup-lux-bar-wrap">
+              <div class="pushup-lux-bar" id="pushupLuxBar" style="width:50%"></div>
+              <div class="pushup-lux-threshold" id="pushupLuxThreshold"></div>
+            </div>
+            <span class="pushup-lux-val" id="pushupLuxVal">—</span>
+          </div>
+          <div class="pushup-sensitivity-row">
+            <span class="pushup-lux-label">감도</span>
+            <input type="range" id="pushupSensitivity" min="10" max="90" value="50" class="pushup-sensitivity-slider">
+            <span class="pushup-sensitivity-val" id="pushupSensitivityVal">50%</span>
+          </div>
+        </div>
+
         <div class="pushup-btn-row">
           <button class="pushup-minus-btn" id="pushupMinus">−</button>
           <button class="pushup-plus-btn" id="pushupPlus">+</button>
