@@ -901,6 +901,7 @@ function stopTabataTimer() {
 function finishTabata() {
   stopTabataTimer();
   tabata.phase = 'done';
+  markTodayExerciseDone();
   soundDone();
   setTimeout(speakDone, 700);
   document.getElementById('tabataDoneSub').textContent =
@@ -909,13 +910,39 @@ function finishTabata() {
   document.getElementById('tabataOverlay').style.background = '';
 }
 
-function finishTabata() {
+// 현재 진행 상황 기준으로 완료된 라운드 수 계산
+function completedRoundsCount() {
+  const { phase, round, settings } = tabata;
+  if (phase === 'warmup' || phase === 'prepare') return 0;
+  if (phase === 'exercise') return round - 1;
+  if (phase === 'rest') return round;
+  if (phase === 'cooldown') return settings.rounds;
+  return 0;
+}
+
+// 오늘 체중 기록이 있으면 운동 완료로 표시 (일일 미션과 연동)
+function markTodayExerciseDone() {
+  const records = getRecords();
+  const idx = records.findIndex(r => r.date === today());
+  if (idx !== -1 && !records[idx].exercise) {
+    records[idx].exercise = true;
+    saveRecords(records);
+    render();
+  }
+}
+
+// 라운드 중간에 기록하고 종료
+function finishTabataEarly() {
+  if (tabata.phase === 'idle' || tabata.phase === 'done') return;
+  const completed = completedRoundsCount();
   stopTabataTimer();
   tabata.phase = 'done';
+  markTodayExerciseDone();
   soundDone();
   setTimeout(speakDone, 700);
-  document.getElementById('tabataDoneSub').textContent =
-    `${tabata.settings.rounds}라운드 모두 완료했어요 💪`;
+  document.getElementById('tabataDoneSub').textContent = completed > 0
+    ? `${completed}라운드까지 기록하고 종료했어요 💪`
+    : `운동을 기록하고 종료했어요 💪`;
   showTabataView('done');
   document.getElementById('tabataOverlay').style.background = '';
 }
@@ -1042,6 +1069,7 @@ document.getElementById('tabataReset').addEventListener('click', () => {
   document.getElementById('tabataOverlay').style.background = '';
   showTabataView('idle');
 });
+document.getElementById('tabataFinishEarly').addEventListener('click', finishTabataEarly);
 document.getElementById('tabataAddTime').addEventListener('click', () => {
   if (tabata.phase === 'prepare' || tabata.phase === 'idle' || tabata.phase === 'done') return;
   tabata.timeLeft += 30;
