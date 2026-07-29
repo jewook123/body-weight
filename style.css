@@ -1594,6 +1594,8 @@ input:focus {
   color: var(--text);
 }
 .tabata-ctrl-btn--secondary:hover { background: var(--text-secondary); color: white; }
+.tabata-ctrl-btn--finish { background: #16a34a; }
+.tabata-ctrl-btn--finish:hover { background: #15803d; }
 
 .tabata-add-time-row {
   margin-top: 12px;
