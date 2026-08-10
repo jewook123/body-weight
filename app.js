@@ -136,30 +136,32 @@ function saveGoal(val) {
   else localStorage.removeItem(GOAL_KEY);
 }
 
-// --- Cloud sync (Supabase, optional) ---
+// --- Cloud sync (Supabase) ---
 let supabaseClient = null;
 let currentSession = null;
+let backendConfigured = false;
 let syncPushTimer = null;
 
 function setSyncStatus(msg) {
-  const a = document.getElementById('syncStatusMsg');
+  const a = document.getElementById('gateStatusMsg');
   const b = document.getElementById('syncStatusMsg2');
   if (a) a.textContent = msg;
   if (b) b.textContent = msg;
 }
 
 function updateSyncUI() {
-  const loggedOut = document.getElementById('syncLoggedOut');
-  const loggedIn  = document.getElementById('syncLoggedIn');
-  if (!loggedOut || !loggedIn) return;
-  if (currentSession) {
-    loggedOut.style.display = 'none';
-    loggedIn.style.display = 'block';
-    document.getElementById('syncEmailLabel').textContent = currentSession.user.email;
-  } else {
-    loggedOut.style.display = 'block';
-    loggedIn.style.display = 'none';
-  }
+  const label = document.getElementById('syncEmailLabel');
+  if (label && currentSession) label.textContent = currentSession.user.email;
+}
+
+function showLoginGate() {
+  document.getElementById('loginGate').style.display = 'flex';
+  document.getElementById('appContainer').style.display = 'none';
+}
+
+function revealApp() {
+  document.getElementById('loginGate').style.display = 'none';
+  document.getElementById('appContainer').style.display = '';
 }
 
 async function pullRecordsFromServer() {
@@ -205,24 +207,36 @@ function pushRecordsToServer(records) {
 async function initSync() {
   try {
     const res = await fetch('/api/config');
-    if (!res.ok) return;
+    if (!res.ok) { revealApp(); return; }
     const { supabaseUrl, supabaseAnonKey } = await res.json();
-    if (!supabaseUrl || !supabaseAnonKey || !window.supabase) return;
+    if (!supabaseUrl || !supabaseAnonKey || !window.supabase) { revealApp(); return; }
 
+    backendConfigured = true;
     supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
 
     const { data: { session } } = await supabaseClient.auth.getSession();
     currentSession = session;
     updateSyncUI();
-    if (currentSession) await pullRecordsFromServer();
+    if (currentSession) {
+      revealApp();
+      await pullRecordsFromServer();
+    } else {
+      showLoginGate();
+    }
 
     supabaseClient.auth.onAuthStateChange((_event, session) => {
       currentSession = session;
       updateSyncUI();
-      if (session) pullRecordsFromServer();
+      if (session) {
+        revealApp();
+        pullRecordsFromServer();
+      } else if (backendConfigured) {
+        showLoginGate();
+      }
     });
   } catch (err) {
     console.warn('동기화 기능을 사용할 수 없어요:', err.message);
+    revealApp();
   }
 }
 
@@ -231,18 +245,17 @@ document.getElementById('syncBtn').addEventListener('click', () => {
   updateSyncUI();
   openOverlay('syncModal', false);
 });
-document.getElementById('cancelSync').addEventListener('click', () => closeOverlay('syncModal', false));
 document.getElementById('closeSyncLoggedIn').addEventListener('click', () => closeOverlay('syncModal', false));
 document.getElementById('syncModal').addEventListener('click', e => {
   if (e.target === document.getElementById('syncModal')) closeOverlay('syncModal', false);
 });
 
-document.getElementById('sendMagicLink').addEventListener('click', async () => {
+document.getElementById('gateSendMagicLink').addEventListener('click', async () => {
   if (!supabaseClient) {
     setSyncStatus('동기화 서버가 아직 설정되지 않았어요.');
     return;
   }
-  const email = document.getElementById('syncEmailInput').value.trim();
+  const email = document.getElementById('gateEmailInput').value.trim();
   if (!email) return;
   setSyncStatus('로그인 링크를 보내는 중...');
   const { error } = await supabaseClient.auth.signInWithOtp({
@@ -256,8 +269,8 @@ document.getElementById('signOutBtn').addEventListener('click', async () => {
   if (!supabaseClient) return;
   await supabaseClient.auth.signOut();
   currentSession = null;
-  updateSyncUI();
-  setSyncStatus('로그아웃했어요.');
+  closeOverlay('syncModal', false);
+  setSyncStatus('');
 });
 
 // Helpers

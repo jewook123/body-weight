@@ -621,6 +621,42 @@ input:focus {
   margin-top: 8px;
 }
 
+.login-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 20px;
+}
+
+.login-gate-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  width: 340px;
+  max-width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  text-align: center;
+}
+
+.login-gate-card h1 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.login-gate-card .form-group {
+  text-align: left;
+}
+
+.login-gate-card .submit-btn {
+  width: 100%;
+  margin-top: 4px;
+}
+
 .cancel-btn {
   flex: 1;
   background: transparent;

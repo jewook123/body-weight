@@ -7,12 +7,25 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
+  <div class="login-gate" id="loginGate">
+    <div class="login-gate-card">
+      <h1>체중 기록</h1>
+      <p class="sync-desc">이메일로 로그인하면 기록이 서버에 저장되어 다른 기기에서도 볼 수 있어요.</p>
+      <div class="form-group">
+        <label for="gateEmailInput">이메일</label>
+        <input type="email" id="gateEmailInput" placeholder="you@example.com">
+      </div>
+      <p class="sync-status" id="gateStatusMsg"></p>
+      <button class="submit-btn" id="gateSendMagicLink">로그인 링크 보내기</button>
+    </div>
+  </div>
+
+  <div class="container" id="appContainer" style="display:none">
     <header>
       <h1>체중 기록</h1>
       <div class="header-actions">
         <button class="action-btn" id="themeBtn">🌙</button>
-        <button class="action-btn" id="syncBtn">☁️ 동기화</button>
+        <button class="action-btn" id="syncBtn">👤 계정</button>
         <button class="action-btn" id="importBtn">가져오기</button>
         <button class="action-btn" id="exportBtn">내보내기</button>
         <button class="action-btn" id="goalBtn">목표 설정</button>
@@ -126,20 +139,8 @@
 
   <div class="modal-overlay" id="syncModal">
     <div class="modal">
-      <h3>☁️ 여러 기기 동기화</h3>
-      <div id="syncLoggedOut">
-        <p class="sync-desc">이메일로 로그인하면 체중 기록이 서버에 저장되어 다른 기기에서도 볼 수 있어요.</p>
-        <div class="form-group">
-          <label for="syncEmailInput">이메일</label>
-          <input type="email" id="syncEmailInput" placeholder="you@example.com">
-        </div>
-        <p class="sync-status" id="syncStatusMsg"></p>
-        <div class="modal-actions">
-          <button class="cancel-btn" id="cancelSync">닫기</button>
-          <button class="submit-btn" id="sendMagicLink">로그인 링크 보내기</button>
-        </div>
-      </div>
-      <div id="syncLoggedIn" style="display:none">
+      <h3>👤 계정</h3>
+      <div id="syncLoggedIn">
         <p class="sync-desc"><span id="syncEmailLabel"></span> 계정으로 동기화 중이에요.</p>
         <p class="sync-status" id="syncStatusMsg2"></p>
         <div class="modal-actions">

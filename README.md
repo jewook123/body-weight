@@ -2,7 +2,7 @@
 
 체중 기록 앱. 정적 프론트엔드(`index.html`, `app.js`, `style.css`)와 Vercel 서버리스 API(`api/`)로 구성되어 있습니다.
 
-기본적으로는 브라우저 `localStorage`에 기록을 저장합니다. 아래 설정을 마치면 이메일 로그인 후 여러 기기에서 같은 기록을 동기화할 수 있습니다 (헤더의 `☁️ 동기화` 버튼).
+아래 클라우드 동기화 설정을 마치면 앱 진입 시 이메일 로그인 화면이 먼저 뜨고, 로그인 후에는 기록이 서버에 저장되어 여러 기기에서 동기화됩니다. 환경변수를 설정하지 않으면 로그인 화면 없이 기존처럼 브라우저 `localStorage`만 사용하는 게스트 모드로 동작합니다.
 
 ## 클라우드 동기화 설정 (Supabase + Vercel)
 
@@ -11,7 +11,9 @@
 1. https://supabase.com 에서 새 프로젝트 생성
 2. 프로젝트의 **SQL Editor**에서 [`supabase/schema.sql`](./supabase/schema.sql) 내용을 실행해 `weight_records` 테이블과 RLS 정책 생성
 3. **Authentication > Providers**에서 Email 로그인이 활성화되어 있는지 확인 (기본 활성화되어 있음, "Confirm email" / magic link 방식 사용)
-4. **Authentication > URL Configuration**의 Redirect URLs에 배포될 Vercel 도메인(예: `https://your-app.vercel.app`)을 추가
+4. **Authentication > URL Configuration**에서:
+   - **Site URL**을 배포될 Vercel 도메인(예: `https://your-app.vercel.app`)으로 변경 (기본값 `http://localhost:3000`으로 두면 로그인 링크가 localhost로 이동해버립니다)
+   - **Redirect URLs**에도 같은 도메인을 추가
 
 ### 2. API 키 확인
 
@@ -35,4 +37,4 @@ Vercel 프로젝트 **Settings > Environment Variables**에 아래 두 값을 �
 
 ### 완료 후
 
-앱 헤더의 `☁️ 동기화` 버튼을 눌러 이메일을 입력하면 로그인 링크가 전송됩니다. 로그인하면 이후 기록 추가/수정/삭제가 자동으로 서버와 동기화됩니다. 환경변수를 설정하지 않으면 이 기능은 조용히 비활성화되고, 앱은 기존처럼 `localStorage`만 사용합니다.
+환경변수가 설정된 상태로 배포하면 앱 진입 시 로그인 화면이 먼저 뜹니다. 이메일을 입력하면 로그인 링크가 전송되고, 로그인하면 앱으로 진입하면서 이후 기록 추가/수정/삭제가 자동으로 서버와 동기화됩니다. 헤더의 `👤 계정` 버튼으로 로그인된 이메일 확인 및 로그아웃이 가능합니다. 환경변수를 설정하지 않으면 로그인 화면 없이 앱은 기존처럼 `localStorage`만 사용합니다.
