@@ -125,6 +125,7 @@ function getRecords() {
 }
 function saveRecords(records) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  pushRecordsToServer(records);
 }
 function getGoal() {
   const v = localStorage.getItem(GOAL_KEY);
@@ -134,6 +135,130 @@ function saveGoal(val) {
   if (val !== null && !isNaN(val)) localStorage.setItem(GOAL_KEY, val.toString());
   else localStorage.removeItem(GOAL_KEY);
 }
+
+// --- Cloud sync (Supabase, optional) ---
+let supabaseClient = null;
+let currentSession = null;
+let syncPushTimer = null;
+
+function setSyncStatus(msg) {
+  const a = document.getElementById('syncStatusMsg');
+  const b = document.getElementById('syncStatusMsg2');
+  if (a) a.textContent = msg;
+  if (b) b.textContent = msg;
+}
+
+function updateSyncUI() {
+  const loggedOut = document.getElementById('syncLoggedOut');
+  const loggedIn  = document.getElementById('syncLoggedIn');
+  if (!loggedOut || !loggedIn) return;
+  if (currentSession) {
+    loggedOut.style.display = 'none';
+    loggedIn.style.display = 'block';
+    document.getElementById('syncEmailLabel').textContent = currentSession.user.email;
+  } else {
+    loggedOut.style.display = 'block';
+    loggedIn.style.display = 'none';
+  }
+}
+
+async function pullRecordsFromServer() {
+  if (!supabaseClient || !currentSession) return;
+  try {
+    const res = await fetch('/api/records', {
+      headers: { Authorization: `Bearer ${currentSession.access_token}` },
+    });
+    if (!res.ok) return;
+    const { records } = await res.json();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    render();
+    setSyncStatus(`서버와 동기화됨 (${records.length}개 기록)`);
+  } catch (err) {
+    setSyncStatus('서버에서 기록을 불러오지 못했어요.');
+  }
+}
+
+function pushRecordsToServer(records) {
+  if (!supabaseClient || !currentSession) return;
+  clearTimeout(syncPushTimer);
+  syncPushTimer = setTimeout(async () => {
+    try {
+      const res = await fetch('/api/records', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${currentSession.access_token}`,
+        },
+        body: JSON.stringify({ records }),
+      });
+      if (!res.ok) throw new Error('sync failed');
+      const { records: serverRecords } = await res.json();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(serverRecords));
+      render();
+      setSyncStatus('저장됨 ✓');
+    } catch (err) {
+      setSyncStatus('동기화 실패 (연결을 확인해주세요)');
+    }
+  }, 500);
+}
+
+async function initSync() {
+  try {
+    const res = await fetch('/api/config');
+    if (!res.ok) return;
+    const { supabaseUrl, supabaseAnonKey } = await res.json();
+    if (!supabaseUrl || !supabaseAnonKey || !window.supabase) return;
+
+    supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    currentSession = session;
+    updateSyncUI();
+    if (currentSession) await pullRecordsFromServer();
+
+    supabaseClient.auth.onAuthStateChange((_event, session) => {
+      currentSession = session;
+      updateSyncUI();
+      if (session) pullRecordsFromServer();
+    });
+  } catch (err) {
+    console.warn('동기화 기능을 사용할 수 없어요:', err.message);
+  }
+}
+
+document.getElementById('syncBtn').addEventListener('click', () => {
+  setSyncStatus('');
+  updateSyncUI();
+  openOverlay('syncModal', false);
+});
+document.getElementById('cancelSync').addEventListener('click', () => closeOverlay('syncModal', false));
+document.getElementById('closeSyncLoggedIn').addEventListener('click', () => closeOverlay('syncModal', false));
+document.getElementById('syncModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('syncModal')) closeOverlay('syncModal', false);
+});
+
+document.getElementById('sendMagicLink').addEventListener('click', async () => {
+  if (!supabaseClient) {
+    setSyncStatus('동기화 서버가 아직 설정되지 않았어요.');
+    return;
+  }
+  const email = document.getElementById('syncEmailInput').value.trim();
+  if (!email) return;
+  setSyncStatus('로그인 링크를 보내는 중...');
+  const { error } = await supabaseClient.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: window.location.origin },
+  });
+  setSyncStatus(error ? `오류: ${error.message}` : `${email}로 로그인 링크를 보냈어요. 메일함을 확인해주세요.`);
+});
+
+document.getElementById('signOutBtn').addEventListener('click', async () => {
+  if (!supabaseClient) return;
+  await supabaseClient.auth.signOut();
+  currentSession = null;
+  updateSyncUI();
+  setSyncStatus('로그아웃했어요.');
+});
 
 // Helpers
 function toISODate(d) {
@@ -1760,3 +1885,4 @@ document.getElementById('diaryDeleteBtn').addEventListener('click', () => {
 applyTheme(localStorage.getItem(THEME_KEY) || 'light');
 document.getElementById('date').value = today();
 render();
+initSync();

@@ -607,6 +607,20 @@ input:focus {
   margin-top: 16px;
 }
 
+.sync-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.sync-status {
+  font-size: 12px;
+  color: var(--accent, #2563eb);
+  min-height: 16px;
+  margin-top: 8px;
+}
+
 .cancel-btn {
   flex: 1;
   background: transparent;

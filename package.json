@@ -1,0 +1,9 @@
+{
+  "name": "body-weight",
+  "version": "1.0.0",
+  "private": true,
+  "description": "체중 기록 앱 (정적 프론트엔드 + Vercel 서버리스 백엔드)",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4"
+  }
+}
