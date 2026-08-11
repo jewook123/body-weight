@@ -136,6 +136,7 @@ function saveGoal(val) {
   else localStorage.removeItem(GOAL_KEY);
 }
 
+
 // --- Cloud sync (Supabase) ---
 let supabaseClient = null;
 let currentSession = null;
@@ -144,6 +145,7 @@ let syncPushTimer = null;
 
 function setSyncStatus(msg) {
   const a = document.getElementById('gateStatusMsg');
+
   const b = document.getElementById('syncStatusMsg2');
   if (a) a.textContent = msg;
   if (b) b.textContent = msg;
